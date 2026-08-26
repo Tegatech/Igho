@@ -1,0 +1,15 @@
+/* ===== V18 MOBILE FILTERS + PLAIN STATUS SUMMARY ===== */
+:root{--info:#365D84}
+.count-strip{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:14px;padding:0}
+.count-pill{border:0!important;background:transparent!important;border-radius:0!important;padding:0!important;font-size:9px;color:var(--muted)}
+.count-pill strong{margin-right:4px;font-size:10px;font-weight:800}
+.count-pill.info strong{color:var(--info)}.count-pill.good strong{color:var(--green)}.count-pill.bad strong{color:var(--red)}.count-pill.warn strong{color:var(--amber)}
+.mobile-filter-toggle{display:none}.filter-panel{display:contents}
+@media(max-width:760px){
+ .toolbar{display:block}.mobile-filter-toggle{display:flex;width:100%;justify-content:space-between;align-items:center;margin-bottom:8px}
+ .mobile-filter-toggle .btn{width:100%;justify-content:space-between;border-color:var(--line-2);background:white}
+ .filter-panel{display:none;width:100%;padding:10px;margin-bottom:10px;background:white;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+ .filter-panel.open{display:block}.filter-panel .toolbar-left,.filter-panel .toolbar-right{display:grid!important;grid-template-columns:1fr!important;width:100%;gap:8px}
+ .filter-panel .search,.filter-panel .select,.filter-panel .btn{width:100%!important;min-width:0!important}.count-strip{gap:12px 18px;margin-bottom:12px}
+}
+@media(max-width:520px){.count-strip{display:flex!important;gap:8px 14px}.count-pill{width:auto!important;text-align:left!important;font-size:8.5px}}
