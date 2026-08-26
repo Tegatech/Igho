@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="assets/igho-icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/igho-icon.svg">
+<meta name="theme-color" content="#08182B">
+<title>Igho — Interactive Product Demo</title>
+<link rel="stylesheet" href="main.css">
+</head>
+<body>
+<div class="app">
+<aside class="sidebar" id="sidebar">
+ <div class="brand"><img src="assets/igho-icon.svg" alt="Igho" class="brand-mark"></div>
+ <div class="workspace-chip"><strong>The24thGroup</strong><span>Interactive demo · NGN</span></div>
+ <nav class="nav">
+  <div class="nav-label">Workspace</div>
+  <button class="nav-item active" data-page="overview">Overview</button>
+  <button class="nav-item" data-page="people">People <span class="nav-count" id="peopleNavCount">128</span></button>
+  <button class="nav-item" data-page="payroll">Payroll</button>
+  <div class="nav-label">Money</div>
+  <button class="nav-item" data-page="payments">Payments</button>
+  <button class="nav-item" data-page="payslips">Payslips <span class="nav-count" id="payslipNavCount">152</span></button>
+  <div class="nav-label">System</div>
+  <button class="nav-item" data-page="activity">Activity</button>
+  <button class="nav-item" data-page="settings">Settings</button>
+ </nav>
+ <div class="sidebar-foot"><div class="user-card"><div class="avatar">JO</div><div><strong>Johannes Oghoro</strong><small>Owner · Approver</small></div></div></div>
+</aside>
+
+<main class="main" id="main">
+<header class="topbar">
+ <div style="display:flex;align-items:center;gap:9px"><button class="icon-btn mobile-menu" id="menuBtn">☰</button><img src="assets/igho-icon.svg" alt="" class="topbar-brand-icon" aria-hidden="true"><div class="breadcrumb" id="breadcrumb">The24thGroup / Overview</div></div>
+ <div class="top-actions"><div class="env">DEMO</div><button class="icon-btn" id="resetBtn" title="Reset demo">↺</button><button class="icon-btn">?</button></div>
+</header>
+
+<section class="page active" id="overview">
+ <div class="page-head"><div><h1 class="page-title">August payroll</h1><p class="page-sub" id="overviewSubtitle"></p></div><div class="page-actions"><button class="btn secondary" onclick="goPage('payrollrun')">Review payroll</button><button class="btn financial" id="overviewPrimary"></button></div></div>
+ <div class="metric-strip" id="overviewMetrics"></div>
+ <div class="overview-grid">
+  <div class="surface"><div class="surface-head"><strong>Current payroll</strong><span>PR-2026-08-001</span></div><div class="payroll-card" id="overviewPayrollCard"></div></div>
+  <div class="surface"><div class="surface-head"><strong>Needs attention</strong><span id="attentionCount"></span></div><div class="attention-list" id="attentionList"></div></div>
+ </div>
+</section>
+
+<section class="page" id="people">
+ <div class="page-head"><div><h1 class="page-title">People</h1><p class="page-sub">Employees and payroll recipients across The24thGroup.</p></div><button class="btn primary" onclick="openModal('personModal')">Add person</button></div>
+ <div class="count-strip" id="peopleStats"></div>
+ <div class="responsive-list-tools">
+   <div class="mobile-search-row">
+     <input class="search mobile-primary-search" id="peopleSearchMobile" placeholder="Search people">
+     <button class="btn secondary mobile-filter-button" id="peopleFilterBtn" onclick="toggleFilters('peopleFilters',this)">Filters <span class="filter-count" id="peopleFilterCount"></span><span class="toggle-mark">+</span></button>
+   </div>
+   <div class="filter-panel" id="peopleFilters">
+     <div class="toolbar">
+       <div class="toolbar-left">
+         <input class="search desktop-search" id="peopleSearch" placeholder="Search name, email or role">
+         <select class="select" id="peopleStatus"><option value="">All statuses</option><option>Active</option><option>Inactive</option></select>
+         <select class="select" id="peopleBank"><option value="">All bank states</option><option>Verified</option><option>Action required</option></select>
+       </div>
+       <div class="toolbar-right">
+         <button class="btn secondary" id="peopleClearFilters" onclick="clearPeopleFilters()" style="display:none">Clear filters</button>
+         <button class="btn secondary">Export</button>
+       </div>
+     </div>
+   </div>
+ </div>
+ <div class="bulkbar" id="peopleBulk"><strong id="selectedCount">0 selected</strong><div class="bulk-actions"><button class="btn" onclick="bulkInclude()">Include in payroll</button><button class="btn">Export</button><button class="btn" onclick="bulkInactive()">Mark inactive</button></div></div>
+ <div class="table-shell desktop-table"><table><thead><tr><th style="width:38px"><input class="checkbox" id="selectAll" type="checkbox"></th><th>Person</th><th>Role</th><th>Monthly pay</th><th>Bank</th><th>Payroll</th><th>Last paid</th></tr></thead><tbody id="peopleRows"></tbody></table></div>
+ <div class="mobile-records" id="peopleMobile"></div>
+ <div class="pagination"><div id="peopleRange"></div><div class="page-controls"><button class="page-btn" id="peoplePrev">‹ Previous</button><button class="page-btn numbered active">1</button><button class="page-btn numbered">2</button><button class="page-btn numbered">3</button><button class="page-btn numbered">…</button><button class="page-btn numbered">6</button><button class="page-btn" id="peopleNext">Next ›</button><select class="select" id="peoplePageSize"><option value="25">25 / page</option><option value="50">50 / page</option><option value="100">100 / page</option></select></div></div>
+</section>
+
+<section class="page" id="payroll">
+ <div class="page-head"><div><h1 class="page-title">Payroll</h1><p class="page-sub">Recurring and historical payroll runs.</p></div><div class="page-actions"><button class="btn secondary">Export</button><button class="btn primary" onclick="createPayroll()">Create payroll</button></div></div>
+ <div class="count-strip" id="payrollStats"></div>
+ <div class="responsive-list-tools">
+   <div class="mobile-search-row mobile-filters-only">
+     <button class="btn secondary mobile-filter-button" id="payrollFilterBtn" onclick="toggleFilters('payrollFilters',this)">Filters <span class="filter-count" id="payrollFilterCount"></span><span class="toggle-mark">+</span></button>
+   </div>
+   <div class="filter-panel" id="payrollFilters">
+     <div class="toolbar">
+       <div class="toolbar-left">
+         <input class="search" id="payrollSearch" placeholder="Search payroll reference or period">
+         <select class="select" id="payrollStatus"><option value="">All statuses</option><option>Draft</option><option>Funded</option><option>Approved</option><option>Processing</option><option>Settled</option></select>
+       </div>
+       <div class="toolbar-right"><button class="btn secondary" id="payrollClearFilters" onclick="clearPayrollFilters()" style="display:none">Clear filters</button></div>
+     </div>
+   </div>
+ </div>
+ <div class="table-shell desktop-table"><table><thead><tr><th>Period</th><th>Pay date</th><th>People</th><th>Net payroll</th><th>Funding</th><th>Approval</th><th>Status</th></tr></thead><tbody id="payrollRows"></tbody></table></div>
+ <div class="mobile-records" id="payrollMobile"></div>
+</section>
+
+<section class="page" id="payrollrun">
+ <div class="page-head"><div><h1 class="page-title">August 2026 Payroll</h1><p class="page-sub" id="runSubtitle"></p></div><div class="page-actions"><button class="btn secondary" onclick="goPage('payroll')">Back to payrolls</button><button class="btn financial" id="runPrimary"></button></div></div>
+ <div class="run-stats" id="runStats"></div>
+ <div class="payroll-layout">
+  <div>
+   <div class="table-shell desktop-table"><table><thead><tr><th>Employee</th><th>Bank</th><th>Net pay</th><th>Readiness</th><th>Transfer</th></tr></thead><tbody id="recipientRows"></tbody></table></div>
+   <div class="mobile-records" id="recipientMobile"></div>
+  </div>
+  <aside><div class="surface" style="margin-bottom:16px"><div class="surface-head"><strong>Readiness</strong><span id="runIssueCount"></span></div><div class="exception-list" id="runIssues"></div></div><div class="summary"><div class="surface-head"><strong>Run summary</strong><span id="runStateLabel"></span></div><div class="summary-body" id="runSummary"></div></div></aside>
+ </div>
+</section>
+
+<section class="page" id="payments">
+ <div class="page-head"><div><h1 class="page-title">Payments</h1><p class="page-sub">Funding transactions and outgoing payroll transfers.</p></div><button class="btn secondary">Export ledger</button></div>
+ <div class="count-strip" id="paymentStats"></div>
+ <div class="responsive-list-tools">
+   <div class="mobile-search-row">
+     <input class="search mobile-primary-search" id="paymentSearchMobile" placeholder="Search payments">
+     <button class="btn secondary mobile-filter-button" id="paymentFilterBtn" onclick="toggleFilters('paymentFilters',this)">Filters <span class="filter-count" id="paymentFilterCount"></span><span class="toggle-mark">+</span></button>
+   </div>
+   <div class="filter-panel" id="paymentFilters">
+     <div class="toolbar">
+       <div class="toolbar-left">
+         <input class="search desktop-search" id="paymentSearch" placeholder="Search reference or person">
+         <select class="select" id="paymentType"><option value="">All types</option><option>Funding</option><option>Transfer</option></select>
+         <select class="select" id="paymentStatus"><option value="">All statuses</option><option>Settled</option><option>Processing</option><option>Failed</option></select>
+       </div>
+       <div class="toolbar-right"><button class="btn secondary" id="paymentClearFilters" onclick="clearPaymentFilters()" style="display:none">Clear filters</button></div>
+     </div>
+   </div>
+ </div>
+ <div class="table-shell desktop-table"><table><thead><tr><th>Reference</th><th>Type</th><th>Description</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead><tbody id="paymentRows"></tbody></table></div>
+ <div class="mobile-records" id="paymentMobile"></div>
+</section>
+
+<section class="page" id="payslips">
+ <div class="page-head"><div><h1 class="page-title">Payslips</h1><p class="page-sub">Employee payslips generated after successful payroll settlement.</p></div></div>
+ <div class="count-strip" id="payslipStats"></div>
+ <div class="responsive-list-tools">
+   <div class="mobile-search-row">
+     <input class="search mobile-primary-search" id="payslipSearchMobile" placeholder="Search payslips">
+     <button class="btn secondary mobile-filter-button" id="payslipFilterBtn" onclick="toggleFilters('payslipFilters',this)">Filters <span class="filter-count" id="payslipFilterCount"></span><span class="toggle-mark">+</span></button>
+   </div>
+   <div class="filter-panel" id="payslipFilters">
+     <div class="toolbar">
+       <div class="toolbar-left">
+         <input class="search desktop-search" id="payslipSearch" placeholder="Search employee">
+         <select class="select" id="payslipPeriod"><option value="">All periods</option><option>August 2026</option><option>July 2026</option></select>
+       </div>
+       <div class="toolbar-right"><button class="btn secondary" id="payslipClearFilters" onclick="clearPayslipFilters()" style="display:none">Clear filters</button></div>
+     </div>
+   </div>
+ </div>
+ <div class="table-shell desktop-table"><table><thead><tr><th>Employee</th><th>Period</th><th>Net pay</th><th>Payroll ref</th><th>Generated</th><th>Status</th></tr></thead><tbody id="payslipRows"></tbody></table></div>
+ <div class="mobile-records" id="payslipMobile"></div>
+</section>
+
+<section class="page" id="activity">
+ <div class="page-head"><div><h1 class="page-title">Activity</h1><p class="page-sub">Audit history across payroll, people, payments and system events.</p></div><button class="btn secondary">Export audit log</button></div>
+ <div class="responsive-list-tools">
+   <div class="mobile-search-row">
+     <input class="search mobile-primary-search" id="activitySearchMobile" placeholder="Search activity">
+     <button class="btn secondary mobile-filter-button" id="activityFilterBtn" onclick="toggleFilters('activityFilters',this)">Filters <span class="filter-count" id="activityFilterCount"></span><span class="toggle-mark">+</span></button>
+   </div>
+   <div class="filter-panel" id="activityFilters">
+     <div class="audit-toolbar">
+       <input class="search desktop-search" id="activitySearch" placeholder="Search event or record">
+       <select class="select" id="activityType"><option value="">All event types</option><option>Payroll</option><option>Payment</option><option>Bank account</option><option>Employee</option><option>Payslip</option><option>System</option></select>
+       <select class="select" id="activityActor"><option value="">All actors</option><option>Johannes Oghoro</option><option>System</option><option>Paystack</option></select>
+       <select class="select" id="activityRange"><option value="">Last 30 days</option><option>Last 7 days</option><option>This year</option></select>
+       <button class="btn secondary" id="activityClearFilters" onclick="clearActivityFilters()" style="display:none">Clear filters</button>
+     </div>
+   </div>
+ </div>
+ <div class="table-shell desktop-table"><table><thead><tr><th>Date / time</th><th>Event</th><th>Related record</th><th>Actor</th></tr></thead><tbody id="activityRows"></tbody></table></div>
+ <div class="mobile-records" id="activityMobile"></div>
+</section>
+
+<section class="page" id="settings">
+ <div class="page-head"><div><h1 class="page-title">Settings</h1><p class="page-sub">Manage how Igho runs payroll, moves money and communicates with your team.</p></div></div>
+ <div class="settings-shell"><aside class="settings-nav"><h3>Settings</h3><button class="settings-link active" data-settings="s-payroll">Payroll</button><button class="settings-link" data-settings="s-payments">Payments</button><button class="settings-link" data-settings="s-notifications">Notifications</button><button class="settings-link" data-settings="s-workspace">Workspace</button><button class="settings-link" data-settings="s-security">Security</button></aside><div id="settingsContent"></div></div>
+</section>
+
+<section class="page" id="employee">
+ <div class="page-head"><div><h1 class="page-title">Employee portal preview</h1><p class="page-sub" id="employeeSubtitle"></p></div><button class="btn secondary" onclick="goPage('people')">Back to People</button></div>
+ <div class="portal"><aside class="portal-side"><div class="portal-user" id="portalUser"></div><button class="portal-link active" data-portal="pay">My pay</button><button class="portal-link" data-portal="bank">Bank account</button><button class="portal-link" data-portal="slips">Payslips</button></aside><div class="portal-main" id="portalMain"></div></div>
+</section>
+</main>
+</div>
+
+<div class="drawer-wrap" id="drawerWrap"><aside class="drawer"><div class="drawer-head"><div><h3 id="drawerTitle"></h3><p id="drawerSubtitle"></p></div><button class="icon-btn" onclick="closeDrawer()">×</button></div><div class="drawer-body"><div class="drawer-tabs"><button class="drawer-tab active" data-tab="summary">Summary</button><button class="drawer-tab" data-tab="history">History</button><button class="drawer-tab" data-tab="audit">Audit</button></div><div class="drawer-section active" id="d-summary"></div><div class="drawer-section" id="d-history"></div><div class="drawer-section" id="d-audit"></div></div><div class="drawer-actions"><button class="btn secondary" onclick="closeDrawer()">Close</button><button class="btn primary" id="drawerPrimary"></button></div></aside></div>
+<div class="modal-wrap" id="fundModal"><div class="modal"><div class="modal-head"><h3>Fund August payroll</h3><button class="icon-btn" onclick="closeModal('fundModal')">×</button></div><div class="modal-body" id="fundModalBody"></div><div class="modal-foot"><button class="btn secondary" onclick="closeModal('fundModal')">Cancel</button><button class="btn financial" id="fundConfirm">Continue</button></div></div></div>
+<div class="modal-wrap" id="approveModal"><div class="modal"><div class="modal-head"><h3>Approve payroll</h3><button class="icon-btn" onclick="closeModal('approveModal')">×</button></div><div class="modal-body" id="approveModalBody"></div><div class="modal-foot"><button class="btn secondary" onclick="closeModal('approveModal')">Cancel</button><button class="btn financial" id="approveConfirm"></button></div></div></div>
+<div class="modal-wrap" id="personModal"><div class="modal"><div class="modal-head"><h3>Add person</h3><button class="icon-btn" onclick="closeModal('personModal')">×</button></div><div class="modal-body"><div style="display:grid;gap:12px"><div class="field"><input id="newName" placeholder="Employee name"></div><div class="field"><input id="newEmail" placeholder="name@example.com"></div><div class="field"><input id="newRole" placeholder="Role"></div><div class="field"><input id="newPay" placeholder="Monthly pay, e.g. 175000"></div></div><div class="notice">The employee receives a secure invite to add and verify their bank account.</div></div><div class="modal-foot"><button class="btn secondary" onclick="closeModal('personModal')">Cancel</button><button class="btn primary" id="addPersonConfirm">Add & invite</button></div></div></div>
+<div class="modal-wrap" id="bankModal"><div class="modal"><div class="modal-head"><h3>Update bank account</h3><button class="icon-btn" onclick="closeModal('bankModal')">×</button></div><div class="modal-body"><div style="display:grid;gap:12px"><div class="field"><select id="bankName"><option>GTBank</option><option>Access Bank</option><option>First Bank</option><option>Zenith Bank</option></select></div><div class="field"><input id="accountNumber" placeholder="10-digit account number"></div><div class="field"><input id="resolvedName" readonly></div></div><div class="notice">For the demo, any 10-digit account number verifies successfully.</div></div><div class="modal-foot"><button class="btn secondary" onclick="closeModal('bankModal')">Cancel</button><button class="btn primary" id="bankConfirm">Verify & save</button></div></div></div>
+<div class="toast" id="toast"><strong id="toastTitle"></strong><small id="toastText"></small></div>
+<script src="main.js"></script>
+</body>
+</html>
