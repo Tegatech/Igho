@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title desc">
+  <title id="title">Igho icon</title>
+  <desc id="desc">Nine-dot grid with a gold centre dot.</desc>
+  <g fill="#08182B">
+    <circle cx="24" cy="24" r="10"/>
+    <circle cx="60" cy="24" r="10"/>
+    <circle cx="96" cy="24" r="10"/>
+    <circle cx="24" cy="60" r="10"/>
+    <circle cx="96" cy="60" r="10"/>
+    <circle cx="24" cy="96" r="10"/>
+    <circle cx="60" cy="96" r="10"/>
+    <circle cx="96" cy="96" r="10"/>
+  </g>
+  <circle cx="60" cy="60" r="10" fill="#E5A400"/>
+</svg>
