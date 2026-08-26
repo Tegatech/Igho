@@ -16,6 +16,20 @@ This repository contains the responsive, clickable Igho demo packaged as a Zoho 
 │   ├── index.html
 │   ├── main.css
 │   ├── main.js
+│   ├── js/
+│   │   ├── bootstrap.js
+│   │   ├── data.js
+│   │   ├── overview-people.js
+│   │   ├── payroll-payments.js
+│   │   ├── drawers.js
+│   │   ├── payroll-actions.js
+│   │   └── responsive.js
+│   ├── styles/
+│   │   ├── core.css
+│   │   ├── base.css
+│   │   ├── list.css
+│   │   ├── filters.css
+│   │   └── responsive.css
 │   └── assets/
 │       └── igho-icon.svg
 └── README.md
