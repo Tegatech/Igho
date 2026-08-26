@@ -1,0 +1,44 @@
+/* ===== V17 TRUE RESPONSIVE LIST SYSTEM ===== */
+@container page (max-width:760px){
+  .mobile-records{
+    display:block;
+    background:white;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .mobile-record{
+    position:relative;
+    display:grid;
+    grid-template-columns:minmax(180px,1.35fr) minmax(0,1fr);
+    column-gap:22px;
+    row-gap:6px;
+    padding:14px 16px;
+    margin:0 !important;
+    background:white;
+    border:0;
+    border-bottom:1px solid var(--line);
+    border-radius:0;
+    box-shadow:none;
+  }
+  .mobile-record:last-child{border-bottom:0}
+  .mobile-record:hover{background:#FBFAF7}
+  .mobile-record h4{margin:0;font-size:10.5px;line-height:1.35;font-weight:780;grid-column:1}
+  .mobile-record > p{grid-column:1;margin:2px 0 0;font-size:8.5px;line-height:1.45;color:var(--muted)}
+  .mobile-record-grid{grid-column:2;grid-row:1 / span 2;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 18px;margin:0;align-content:center}
+  .mobile-record-grid span{display:block;margin-bottom:2px;font-size:7px;line-height:1.2;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  .mobile-record-grid strong{display:block;margin:0;font-size:9px;line-height:1.35;font-weight:720;overflow-wrap:anywhere}
+  .mobile-record-foot{grid-column:1 / -1;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:9px 0 0;padding:9px 0 0;border-top:1px solid #ECE9E1;font-size:8.5px}
+  #payslipMobile .mobile-record,#paymentMobile .mobile-record,#activityMobile .mobile-record{grid-template-columns:minmax(0,1fr) auto}
+  #payslipMobile .mobile-record-foot,#paymentMobile .mobile-record-foot,#activityMobile .mobile-record-foot{grid-column:1 / -1}
+}
+@container page (max-width:520px){
+  .mobile-records{border-radius:var(--radius-sm)}
+  .mobile-record{display:block;padding:13px 14px}
+  .mobile-record h4{font-size:10.5px}
+  .mobile-record > p{margin-top:3px}
+  .mobile-record-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;margin-top:11px;padding-top:10px;border-top:1px solid #ECE9E1}
+  .mobile-record-foot{margin-top:10px}
+}
+@container page (max-width:380px){.mobile-record-grid{grid-template-columns:1fr}}
