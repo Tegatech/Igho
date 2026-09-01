@@ -33,11 +33,13 @@ V1 rules:
 - payroll is prepared 7 days before payday
 - employee, bank-account and salary-change cutoff is 7 days before payday
 - changes made after the cutoff take effect in the next payroll run
+- if payday falls on a weekend or bank holiday, Igho keeps the configured pay date unchanged
+- V1 does not automatically move payday forward or backward for weekends or holidays
+- if provider timing means manual intervention is required on that date, the Owner handles it manually in V1
 - once payroll is approved, changes require reopening the payroll
 - once payment processing starts, the run is immutable
 
 Still decide later:
-- weekend/bank-holiday handling
 - whether an Owner can override a post-cutoff change for the current run
 
 ## 3. Adjustments
@@ -245,6 +247,5 @@ Before external commercialisation, separately verify requirements around employm
 5. Data/security
 6. Notifications implementation
 7. Environment/operations
-8. Weekend/bank-holiday payroll handling
 
 Once these are resolved, V1 is sufficiently specified to move from interactive frontend into production backend implementation.
