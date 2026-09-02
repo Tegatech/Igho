@@ -9,7 +9,8 @@
     "js/responsive.js",
     "js/ui-polish.js",
     "js/v1-scope.js",
-    "js/employee-portal.js"
+    "js/employee-portal.js",
+    "js/branding.js"
   ];
   for (const src of scripts) {
     await new Promise((resolve, reject) => {
