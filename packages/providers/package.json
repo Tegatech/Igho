@@ -2,5 +2,10 @@
   "name": "@igho/providers",
   "version": "0.1.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": {
+    "@igho/core": "0.1.0",
+    "@neondatabase/serverless": "^1.1.0"
+  }
 }
