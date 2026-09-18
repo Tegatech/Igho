@@ -1,27 +1,28 @@
 # Igho V1 Open Decisions
 
-_Last updated: 2026-09-02_
+_Last updated: 2026-09-18_
 
-This document tracks the remaining decisions before calling V1 build-ready. Resolved items are recorded here so implementation has a clear baseline.
+This document tracks remaining V1 implementation decisions and records resolved product decisions.
 
 ## 1. Authentication and account recovery
 
-Status: OPEN
+Status: PARTIALLY RESOLVED
 
-Current direction:
-- Neon is the preferred database direction.
-- Authentication provider is still to be selected.
-- Zoho Auth is not preferred.
+Resolved:
+- database: Neon PostgreSQL
+- authentication platform: Neon Auth / Better Auth
+- first-party web sessions use secure HttpOnly cookies
+- auth tokens must not be stored in browser localStorage
 
-Still decide:
-- authentication provider
+Still decide/implement in M1:
 - employee invite activation flow
 - admin invite flow
-- password reset/recovery
-- MFA requirements for Owner/Approver
-- session duration and revocation
+- password reset/recovery UX
+- exact session duration, idle timeout and revocation behaviour
+- MFA timing for Owner/Approver / money-moving permissions
 
-Recommendation: require MFA for users who can fund, approve or execute payroll before external commercial use.
+Recommendation:
+- require MFA for users who can fund, approve or execute payroll before external commercial use.
 
 ## 2. Payroll calendar and cutoffs
 
@@ -46,9 +47,7 @@ Still decide later:
 
 Status: RESOLVED FOR V1
 
-Keep adjustments deliberately simple.
-
-Supported V1 adjustment types:
+Supported adjustment types:
 - bonus
 - reimbursement
 - allowance
@@ -56,15 +55,7 @@ Supported V1 adjustment types:
 - salary correction
 - other
 
-Each adjustment should record:
-- type
-- amount
-- reason
-- created_by
-- created_at
-- optional attachment/reference
-
-Adjustments can be positive or negative and are applied to the payroll item before net pay is calculated.
+Each adjustment records type, amount, reason, created_by, created_at and optional attachment/reference.
 
 V1 does not include a statutory tax, pension or automatic prorating engine.
 
@@ -72,52 +63,21 @@ V1 does not include a statutory tax, pension or automatic prorating engine.
 
 Status: PARTIALLY RESOLVED
 
-Goal: keep payslips simple, but useful enough to support basic proof-of-income and proof-of-employment use cases.
+Goal: simple payslips useful for proof-of-income and proof-of-employment.
 
-Recommended V1 payslip fields:
-
-Employer / workspace:
-- company/workspace name
-- employer address or registered office
-- employer email/contact
-- optional company registration number
-
-Employee:
-- employee full name
-- employee number/reference
-- role/job title
-- employment start date
-
-Payroll:
-- payroll period
-- pay date
-- base salary
-- adjustments, itemised by label
-- deductions, itemised by label
-- net pay
-- currency
-- payment status
-- payment reference
-- payslip/document reference
-
-Recommended presentation:
-- simple branded PDF
-- clear employer and employee identity at the top
-- payment breakdown in the middle
-- net pay prominent
-- short footer stating that the document is generated from Igho payroll records
+V1 fields include employer/workspace identity, employee identity/reference/job title/start date, payroll period, pay date, base salary, itemised adjustments/deductions, net pay, currency, payment status/reference and document reference.
 
 Still decide:
 - PDF generation technology
 - document storage location
 - payslip numbering format
-- whether employer address/company registration number are mandatory or optional in the first internal release
+- whether employer address/company registration number are mandatory or optional in first internal release
 
 ## 5. Webhooks, idempotency and duplicate protection
 
-Status: OPEN
+Status: OPEN — BUILD BLOCKER BEFORE LIVE PAYOUTS
 
-Before live money movement, specify:
+Specify:
 - provider webhook verification
 - webhook event deduplication
 - unique funding references
@@ -126,15 +86,11 @@ Before live money movement, specify:
 - duplicate transfer protection
 - replay handling
 
-This is a build blocker for real payouts.
-
 ## 6. Reconciliation
 
 Status: OPEN
 
-Define how Igho proves its internal state matches provider state.
-
-Minimum requirements:
+Minimum:
 - funding transaction verification
 - available-balance check where supported
 - transfer status verification
@@ -145,16 +101,7 @@ Minimum requirements:
 
 Status: OPEN
 
-Define behaviour for:
-- card funding failure
-- funding settlement delay
-- insufficient provider balance
-- recipient creation failure
-- account verification failure
-- individual transfer failure
-- transfer reversal
-- provider timeout
-- webhook delay
+Define card funding failure, settlement delay, insufficient provider balance, recipient creation failure, account verification failure, individual transfer failure, reversal, provider timeout and webhook delay.
 
 A failed employee transfer must be independently retryable.
 
@@ -163,22 +110,22 @@ A failed employee transfer must be independently retryable.
 Status: OPEN
 
 Define:
-- which bank details are stored
+- stored bank data
 - masking rules
 - encryption expectations
-- audit retention period
+- audit retention
 - provider payload retention
 - payslip retention
-- employee deletion/deactivation behaviour
+- employee deletion/deactivation
 - data export expectations
 
-Avoid putting full historical account numbers or secrets into logs/audit metadata.
+Never put full historical account numbers or secrets into logs/audit metadata.
 
 ## 9. Notifications
 
 Status: OPEN AT IMPLEMENTATION LEVEL
 
-Product direction is already agreed:
+Product direction:
 - email first for V1
 - event-driven notifications
 - employee invite
@@ -193,22 +140,24 @@ Still decide:
 - V1 email provider
 - sender domain/address
 - final templates
-- retry policy for failed email delivery
+- retry policy
 
 ## 10. Secrets and environments
 
-Status: OPEN
+Status: PARTIALLY RESOLVED
 
-Define Development and Production from the start.
+Environments:
+- development
+- production
 
-Never store provider secrets in frontend code or repository files.
-
-Document:
+Still define:
 - secret names
 - environment ownership
 - callback/webhook URLs
-- provider test/live mode separation
+- provider test/live separation
 - deployment promotion process
+
+Never store provider secrets in frontend code or repository files.
 
 ## 11. Observability and operational support
 
@@ -222,7 +171,7 @@ Minimum V1 observability:
 - failed scheduled payroll preparation
 - audit trail for administrative actions
 
-Define what should alert an Owner versus simply appear in Activity.
+Define alert vs Activity-only events.
 
 ## 12. Legal/statutory boundary
 
@@ -230,22 +179,16 @@ Status: RESOLVED FOR INTERNAL V1
 
 V1 is initially an internal The24thGroup payroll orchestration and payment administration tool.
 
-It is not yet:
-- a statutory Nigerian payroll/tax calculation engine
-- a PAYE calculation service
-- a pension calculation engine
-- a payroll compliance service for external customers
+It is not yet a statutory Nigerian payroll/tax calculation engine, PAYE service, pension calculation engine or payroll compliance service for external customers.
 
-Before external commercialisation, separately verify requirements around employment records, statutory deductions, payroll documentation, payments regulation and data protection.
+Before external commercialisation, separately verify employment records, statutory deductions, payroll documentation, payments regulation and data protection requirements.
 
-## Recommended next specification order
+## Recommended specification order
 
-1. Authentication/onboarding
-2. Payslip implementation details
-3. Webhook/idempotency rules
-4. Failure/retry and reconciliation
-5. Data/security
-6. Notifications implementation
-7. Environment/operations
-
-Once these are resolved, V1 is sufficiently specified to move from interactive frontend into production backend implementation.
+1. M1 authentication/onboarding/session rules
+2. payslip implementation details
+3. webhook/idempotency rules
+4. failure/retry and reconciliation
+5. data/security
+6. notifications implementation
+7. environment/operations

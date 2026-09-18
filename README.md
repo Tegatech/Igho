@@ -1,24 +1,57 @@
 # Igho
 
-Interactive payroll operations demo for The24thGroup.
+Igho is The24thGroup's payroll orchestration platform.
 
-## Deploy with Zoho Catalyst Slate
+This repository contains the existing interactive product demo in `client/` and the production foundation in `apps/`, `packages/` and `infrastructure/`.
 
-Deploy this repository from GitHub using:
+## Project management
 
-- Branch: `main`
-- Root path: `/`
-- Framework: Static / Plain HTML
-- Build command: none
-- Install command: none
-- Auto Deploy: recommended
+Build governance lives in `Project Management/`. Start with:
 
-The root `index.html` opens the current application in `client/index.html`.
+1. `Project Management/V1_tasklist.md`
+2. `Project Management/Standards/V1_IMPLEMENTATION_BASELINE.md`
+3. `Project Management/implementation_rule.md`
 
-## Product demo
+The active execution plan is mirrored in Asana.
 
-The current demo includes Overview, People, Payroll, Payments, Payslips, Activity, Settings, an employee portal preview, responsive lists and filters, and a stateful payroll flow stored in browser localStorage.
+## Production structure
 
-## Brand asset
+```text
+apps/
+  web/
+packages/
+  core/
+  providers/
+  ui/
+infrastructure/
+  migrations/
+  scripts/
+Project Management/
+docs/
+client/
+```
 
-The Igho SVG icon is stored at `client/assets/igho-icon.svg`.
+The static demo is a product/visual reference, not the production architecture.
+
+## Quality gates
+
+Node.js 22+ is required.
+
+```bash
+npm install
+npm run quality
+```
+
+The quality workflow runs on pushes and pull requests to `main` and enforces Prettier, ESLint and TypeScript strict mode.
+
+## Platform baseline
+
+- Database: Neon PostgreSQL 18
+- Auth: Neon Auth / Better Auth
+- Funding provider: Paystack (V1)
+- Payout provider: Paystack (V1)
+- Demo hosting: Zoho Catalyst Slate
+
+## Demo deployment
+
+The existing demo remains deployable through Catalyst Slate with branch `main`, root `/`, Static / Plain HTML, and no install/build command.
