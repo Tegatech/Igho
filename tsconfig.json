@@ -4,6 +4,6 @@
     { "path": "./packages/core" },
     { "path": "./packages/providers" },
     { "path": "./packages/ui" },
-    { "path": "./apps/web" }
+    { "path": "./functions/igho-api" }
   ]
 }

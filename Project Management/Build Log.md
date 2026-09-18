@@ -2,38 +2,38 @@
 
 ## 2026-09-18 — M0 foundation completed
 
-Tasks:
-- M0-T001
-- M0-T002
-- M0-T003
-- M0-T004
-- M0-T005
-
-Changes:
-- established Project Management source-of-truth structure
-- created implementation rule
-- created Igho V1 implementation baseline
-- adapted The24thGroup architecture and technical standards for Igho
-- created change, risk/dependency and blocker logs
-- created milestone QA process
-- established production repository scaffold alongside the existing static demo
-- added npm workspaces for `apps/*` and `packages/*`
-- added `apps/web`, `packages/core`, `packages/providers`, `packages/ui`
-- added infrastructure migration/script locations
-- enabled TypeScript strict mode with stricter safety flags
-- added type-aware ESLint configuration
-- added Prettier source/config checks
-- added GitHub Actions quality workflow for pull requests and pushes to main
+M0 established the source-of-truth structure, implementation standards, quality gates, migration locations and production package boundaries.
 
 Evidence:
-- M0 standards commit: `39c7b6a11eece43f6a408af840c5bdfeeda35094`
-- M0 tooling/scaffold commit: recorded in repository history immediately after the standards commit
-- Asana project contains matching M0 task state
+- standards commit: `39c7b6a11eece43f6a408af840c5bdfeeda35094`
+- scaffold commit: `e66386607716da6dc932135ac4f19641e9261241`
 
-Notes:
-- existing `client/` Slate demo remains intentionally untouched and deployable
-- production framework/runtime is not artificially locked in M0; M1 will choose/bootstrap the web runtime around Neon Auth session integration
-- testing gates will expand when executable domain/application logic is introduced
+## 2026-09-18 — M1 database foundation applied
 
-Next:
-- M1 — Auth, workspace & access model
+Production Neon migration applied after explicit Product approval.
+
+Verified in production:
+- The24thGroup workspace: 1
+- roles: 4
+- permissions: 27
+- workspace memberships: 0 before Owner bootstrap
+
+M1-T002 and M1-T003 are complete.
+
+## 2026-09-18 — M1 runtime refactored to Catalyst serverless
+
+Decision:
+- remove temporary Next.js/AppSail direction
+- keep Slate as frontend
+- use Catalyst API Gateway + one Advanced I/O Function (`igho-api`)
+- keep Neon Managed Better Auth + Neon PostgreSQL
+
+Authentication:
+- Slate authenticates directly with Neon Auth
+- protected Igho API calls use Neon access JWT Bearer tokens
+- `igho-api` validates JWTs via Neon JWKS
+- `NEON_AUTH_COOKIE_SECRET` removed from Igho runtime requirements
+
+Database schema and RBAC remain unchanged.
+
+M1 remains open for CI, deployment configuration, Owner bootstrap and Product hands-on testing.

@@ -1,0 +1,17 @@
+{
+  "name": "@igho/igho-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@igho/core": "0.1.0",
+    "@igho/providers": "0.1.0",
+    "@neondatabase/serverless": "^1.1.0",
+    "express": "^5.1.0",
+    "jose": "^6.1.0"
+  }
+}

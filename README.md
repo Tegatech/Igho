@@ -2,38 +2,42 @@
 
 Igho is The24thGroup's payroll orchestration platform.
 
-This repository contains the existing interactive product demo in `client/` and the production foundation in `apps/`, `packages/` and `infrastructure/`.
-
-## Project management
-
-Build governance lives in `Project Management/`. Start with:
-
-1. `Project Management/V1_tasklist.md`
-2. `Project Management/Standards/V1_IMPLEMENTATION_BASELINE.md`
-3. `Project Management/implementation_rule.md`
-
-The active execution plan is mirrored in Asana.
-
-## Production structure
+## Production architecture
 
 ```text
-apps/
-  web/
+Catalyst Slate
+      |
+      | Neon Auth session/JWT
+      v
+Catalyst API Gateway
+      |
+      v
+Catalyst Advanced I/O Function: igho-api
+      |
+      +-- Neon PostgreSQL
+      +-- Neon Auth JWKS verification
+      +-- Paystack (later milestone)
+      +-- Catalyst Email / Queue / Cache / File Storage (as introduced)
+```
+
+The existing `client/` application remains the product/visual reference while backend milestones are completed.
+
+## Repository structure
+
+```text
+client/
+functions/
+  igho-api/
 packages/
   core/
   providers/
   ui/
 infrastructure/
-  migrations/
-  scripts/
 Project Management/
 docs/
-client/
 ```
 
-The static demo is a product/visual reference, not the production architecture.
-
-## Quality gates
+## Quality
 
 Node.js 22+ is required.
 
@@ -42,16 +46,20 @@ npm install
 npm run quality
 ```
 
-The quality workflow runs on pushes and pull requests to `main` and enforces Prettier, ESLint and TypeScript strict mode.
+Quality checks formatting, ESLint, strict TypeScript, tests and the deployable Catalyst Function build.
 
-## Platform baseline
+## Catalyst
 
-- Database: Neon PostgreSQL 18
-- Auth: Neon Auth / Better Auth
-- Funding provider: Paystack (V1)
-- Payout provider: Paystack (V1)
-- Demo hosting: Zoho Catalyst Slate
+Project: Igho
 
-## Demo deployment
+- Catalyst project ID: `8644000000692021`
+- server runtime: Advanced I/O Function
+- function: `igho-api`
+- frontend: Slate
+- public API routing: API Gateway
 
-The existing demo remains deployable through Catalyst Slate with branch `main`, root `/`, Static / Plain HTML, and no install/build command.
+The Function must be built before Catalyst deployment so `functions/igho-api/index.js` exists.
+
+## Project management
+
+Build governance lives in `Project Management/`.

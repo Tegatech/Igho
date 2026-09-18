@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "targets": ["igho-api"],
+    "ignore": ["src", "tsconfig.json", "build.mjs", "*.test.ts"],
+    "source": "functions"
+  },
+  "client": {
+    "source": "client"
+  }
+}

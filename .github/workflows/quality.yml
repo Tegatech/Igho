@@ -23,11 +23,7 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        # Neon Auth UI currently publishes a required workspace:* peer range for
-        # @neondatabase/auth. npm's strict peer resolver cannot resolve that
-        # published workspace protocol outside Neon's monorepo, so CI ignores
-        # peer auto-resolution while we pin both compatible packages explicitly.
-        run: npm install --legacy-peer-deps --no-audit --no-fund
+        run: npm install --no-audit --no-fund
 
       - name: Run quality gates
         run: npm run quality
