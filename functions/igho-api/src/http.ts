@@ -6,12 +6,7 @@ export function requestId(req: Request): string {
   return supplied ?? `req_${randomUUID()}`;
 }
 
-export function ok(
-  res: Response,
-  id: string,
-  data: unknown,
-  status = 200,
-): void {
+export function ok(res: Response, id: string, data: unknown, status = 200): void {
   res.status(status).json({ request_id: id, data, meta: {} });
 }
 
