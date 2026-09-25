@@ -47,7 +47,10 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
     },
 
     async activeMembershipCount(): Promise<number> {
-      const rows = (await sql`select count(*)::int as count from public.workspace_memberships where deleted_at is null`) as { count: number }[];
+      const rows =
+        (await sql`select count(*)::int as count from public.workspace_memberships where deleted_at is null`) as {
+          count: number;
+        }[];
       return rows[0]?.count ?? 0;
     },
 
