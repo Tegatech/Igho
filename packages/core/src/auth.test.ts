@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { AuthorizationError, permissionsForRoles, requirePermission } from "./auth.js";
+import {
+  AuthorizationError,
+  permissionsForRoles,
+  requirePermission,
+} from "./auth.js";
 
 describe("Igho RBAC", () => {
   it("gives OWNER all money permissions", () => {
@@ -24,6 +28,8 @@ describe("Igho RBAC", () => {
 
   it("throws when a permission is missing", () => {
     const permissions = permissionsForRoles(["EMPLOYEE"]);
-    expect(() => requirePermission({ permissions }, "payroll.view")).toThrow(AuthorizationError);
+    expect(() => {
+      requirePermission({ permissions }, "payroll.view");
+    }).toThrow(AuthorizationError);
   });
 });

@@ -3,10 +3,15 @@ import type { Request, Response } from "express";
 
 export function requestId(req: Request): string {
   const supplied = req.header("x-request-id")?.trim();
-  return supplied || `req_${randomUUID()}`;
+  return supplied ?? `req_${randomUUID()}`;
 }
 
-export function ok<T>(res: Response, id: string, data: T, status = 200): void {
+export function ok(
+  res: Response,
+  id: string,
+  data: unknown,
+  status = 200,
+): void {
   res.status(status).json({ request_id: id, data, meta: {} });
 }
 

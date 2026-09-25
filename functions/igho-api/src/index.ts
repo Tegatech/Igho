@@ -94,7 +94,12 @@ app.get("/api/v1/health", (_req, res) => {
 
 app.post("/api/v1/bootstrap", authenticate, async (req: AuthenticatedRequest, res) => {
   const id = requestId(req);
-  const identity = req.ighoIdentity!;
+  const identity = req.ighoIdentity;
+
+  if (!identity) {
+    fail(res, id, 401, "AUTH_001", "Authentication required");
+    return;
+  }
 
   if (identity.email !== env.bootstrapOwnerEmail) {
     fail(res, id, 403, "AUTH_003", "Workspace bootstrap is not available for this account");
@@ -132,7 +137,12 @@ app.post("/api/v1/bootstrap", authenticate, async (req: AuthenticatedRequest, re
 
 app.get("/api/v1/me", authenticate, requireWorkspaceAccess, (req: AuthenticatedRequest, res) => {
   const id = requestId(req);
-  const access = req.ighoAccess!;
+  const access = req.ighoAccess;
+
+  if (!access) {
+    fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
+    return;
+  }
 
   ok(res, id, {
     auth_user_id: access.authUserId,
@@ -188,7 +198,12 @@ app.post(
   requireWorkspaceAccess,
   async (req: AuthenticatedRequest, res) => {
     const id = requestId(req);
-    const access = req.ighoAccess!;
+    const access = req.ighoAccess;
+
+    if (!access) {
+      fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
+      return;
+    }
 
     try {
       requirePermission(access, "users.manage");
@@ -237,7 +252,13 @@ app.post(
   authenticate,
   async (req: AuthenticatedRequest, res) => {
     const id = requestId(req);
-    const identity = req.ighoIdentity!;
+    const identity = req.ighoIdentity;
+
+    if (!identity) {
+      fail(res, id, 401, "AUTH_001", "Authentication required");
+      return;
+    }
+
     const body = req.body as { token?: unknown };
     const token = typeof body.token === "string" ? body.token.trim() : "";
 
@@ -269,7 +290,8 @@ app.post(
   },
 );
 
-app.use((error: unknown, req: Request, res: Response, _next: NextFunction) => {
+app.use((error: unknown, req: Request, res: Response, next: NextFunction) => {
+  void next;
   console.error(
     JSON.stringify({
       level: "error",
