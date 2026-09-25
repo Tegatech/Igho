@@ -27,3 +27,22 @@ jobs:
 
       - name: Run quality gates
         run: npm run quality
+
+      - name: Upload Catalyst function bundle
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: igho-api-catalyst
+          path: |
+            functions/igho-api/index.js
+            functions/igho-api/package.json
+            functions/igho-api/catalyst-config.json
+          if-no-files-found: error
+
+      - name: Upload web client
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: igho-web-client
+          path: client/
+          if-no-files-found: error
