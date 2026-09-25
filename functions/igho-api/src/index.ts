@@ -290,8 +290,7 @@ app.post(
   },
 );
 
-app.use((error: unknown, req: Request, res: Response, next: NextFunction) => {
-  void next;
+app.use((error: unknown, req: Request, res: Response, _next: NextFunction) => {
   console.error(
     JSON.stringify({
       level: "error",
