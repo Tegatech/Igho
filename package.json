@@ -3,8 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "description": "Igho payroll orchestration platform",
-  "engines": { "node": ">=22" },
-  "workspaces": ["functions/*", "packages/*"],
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "functions/*",
+    "packages/*"
+  ],
   "scripts": {
     "build": "npm run build --workspace @igho/igho-api",
     "lint": "eslint \"functions/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\"",

@@ -49,7 +49,11 @@ async function authenticate(req: AuthenticatedRequest, res: Response, next: Next
   next();
 }
 
-async function requireWorkspaceAccess(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+async function requireWorkspaceAccess(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+) {
   const id = requestId(req);
   const identity = req.ighoIdentity;
 
@@ -126,23 +130,18 @@ app.post("/api/v1/bootstrap", authenticate, async (req: AuthenticatedRequest, re
   );
 });
 
-app.get(
-  "/api/v1/me",
-  authenticate,
-  requireWorkspaceAccess,
-  (req: AuthenticatedRequest, res) => {
-    const id = requestId(req);
-    const access = req.ighoAccess!;
+app.get("/api/v1/me", authenticate, requireWorkspaceAccess, (req: AuthenticatedRequest, res) => {
+  const id = requestId(req);
+  const access = req.ighoAccess!;
 
-    ok(res, id, {
-      auth_user_id: access.authUserId,
-      email: access.email,
-      workspace_id: access.workspaceId,
-      membership_id: access.membershipId,
-      roles: access.roles,
-    });
-  },
-);
+  ok(res, id, {
+    auth_user_id: access.authUserId,
+    email: access.email,
+    workspace_id: access.workspaceId,
+    membership_id: access.membershipId,
+    roles: access.roles,
+  });
+});
 
 app.get(
   "/api/v1/me/pay",

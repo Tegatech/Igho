@@ -10,7 +10,9 @@ export function createNeonJwtVerifier(neonAuthBaseUrl: string) {
   const jwksUrl = new URL(`${neonAuthBaseUrl}/.well-known/jwks.json`);
   const jwks = createRemoteJWKSet(jwksUrl);
 
-  return async function verifyBearer(authorization?: string): Promise<AuthenticatedIdentity | null> {
+  return async function verifyBearer(
+    authorization?: string,
+  ): Promise<AuthenticatedIdentity | null> {
     if (!authorization?.startsWith("Bearer ")) return null;
 
     const token = authorization.slice("Bearer ".length).trim();

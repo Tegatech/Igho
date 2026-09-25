@@ -2,14 +2,26 @@ import { createHash, randomBytes } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
 import { permissionsForRoles, type AccessContext, type RoleKey } from "@igho/core";
 
-interface MembershipRow { membership_id: string; workspace_id: string; role_key: RoleKey; }
-interface InvitationRow { id: string; workspace_id: string; email: string; role_id: string; }
+interface MembershipRow {
+  membership_id: string;
+  workspace_id: string;
+  role_key: RoleKey;
+}
+interface InvitationRow {
+  id: string;
+  workspace_id: string;
+  email: string;
+  role_id: string;
+}
 
 export function createNeonWorkspaceStore(databaseUrl: string) {
   const sql = neon(databaseUrl);
 
   return {
-    async resolveAccess(input: { authUserId: string; email: string }): Promise<AccessContext | null> {
+    async resolveAccess(input: {
+      authUserId: string;
+      email: string;
+    }): Promise<AccessContext | null> {
       const rows = await sql<MembershipRow[]>`
         select wm.id::text as membership_id, wm.workspace_id::text as workspace_id, r.role_key
         from public.workspace_memberships wm
@@ -21,16 +33,32 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
       `;
       const first = rows[0];
       if (!first) return null;
-      const roles = rows.filter((row) => row.workspace_id === first.workspace_id).map((row) => row.role_key);
-      return { authUserId: input.authUserId, email: input.email, workspaceId: first.workspace_id, membershipId: first.membership_id, roles, permissions: permissionsForRoles(roles) };
+      const roles = rows
+        .filter((row) => row.workspace_id === first.workspace_id)
+        .map((row) => row.role_key);
+      return {
+        authUserId: input.authUserId,
+        email: input.email,
+        workspaceId: first.workspace_id,
+        membershipId: first.membership_id,
+        roles,
+        permissions: permissionsForRoles(roles),
+      };
     },
 
     async activeMembershipCount(): Promise<number> {
-      const rows = await sql<{ count: number }[]>`select count(*)::int as count from public.workspace_memberships where deleted_at is null`;
+      const rows = await sql<
+        { count: number }[]
+      >`select count(*)::int as count from public.workspace_memberships where deleted_at is null`;
       return rows[0]?.count ?? 0;
     },
 
-    async bootstrapOwner(input: { authUserId: string; email: string; displayName: string; requestId: string }): Promise<string | null> {
+    async bootstrapOwner(input: {
+      authUserId: string;
+      email: string;
+      displayName: string;
+      requestId: string;
+    }): Promise<string | null> {
       const rows = await sql<{ membership_id: string }[]>`
         with profile as (
           insert into public.user_profiles (auth_user_id, display_name, created_by)
@@ -54,7 +82,13 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
       return rows[0]?.membership_id ?? null;
     },
 
-    async createInvitation(input: { workspaceId: string; actorAuthUserId: string; email: string; role: Exclude<RoleKey, "OWNER">; requestId: string }): Promise<{ invitationId: string; token: string; expiresAt: string } | null> {
+    async createInvitation(input: {
+      workspaceId: string;
+      actorAuthUserId: string;
+      email: string;
+      role: Exclude<RoleKey, "OWNER">;
+      requestId: string;
+    }): Promise<{ invitationId: string; token: string; expiresAt: string } | null> {
       const token = randomBytes(32).toString("base64url");
       const tokenHash = createHash("sha256").update(token).digest("hex");
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -75,7 +109,13 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
       return id ? { invitationId: id, token, expiresAt } : null;
     },
 
-    async acceptInvitation(input: { authUserId: string; email: string; displayName: string; token: string; requestId: string }): Promise<{ workspaceId: string; membershipId: string } | null> {
+    async acceptInvitation(input: {
+      authUserId: string;
+      email: string;
+      displayName: string;
+      token: string;
+      requestId: string;
+    }): Promise<{ workspaceId: string; membershipId: string } | null> {
       const tokenHash = createHash("sha256").update(input.token).digest("hex");
       const invites = await sql<InvitationRow[]>`
         select id::text, workspace_id::text, email, role_id::text
