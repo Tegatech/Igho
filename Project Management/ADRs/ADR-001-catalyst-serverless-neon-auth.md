@@ -11,7 +11,7 @@ M1 briefly introduced a Next.js server runtime because Neon provides a first-par
 
 Use:
 
-- Catalyst Slate for the browser application
+- Catalyst Web Client Hosting for the browser application
 - Catalyst API Gateway as the public Igho API boundary
 - one Catalyst Advanced I/O Function, `igho-api`, as the initial API/runtime
 - Neon PostgreSQL as the application database
@@ -21,7 +21,7 @@ Use:
 
 ## Authentication model
 
-Slate authenticates directly against Neon Managed Better Auth using the Neon browser SDK / REST API.
+The hosted web client authenticates directly against Neon Managed Better Auth using the Neon browser SDK / REST API.
 
 Neon returns an access JWT. The browser sends that JWT as a Bearer token to the Catalyst API.
 
@@ -47,7 +47,7 @@ Split the function later only for clear operational reasons such as independent 
 - `packages/core`: domain/RBAC policy
 - `packages/providers`: external adapters
 - `functions/igho-api`: HTTP transport/composition
-- `client`: Slate frontend
+- `client`: Catalyst Web Client Hosting frontend
 - `infrastructure`: migrations and deployment documentation
 
 ## Consequences

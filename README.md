@@ -5,7 +5,7 @@ Igho is The24thGroup's payroll orchestration platform.
 ## Production architecture
 
 ```text
-Catalyst Slate
+Catalyst Web Client Hosting
       |
       | Neon Auth session/JWT
       v
@@ -55,7 +55,7 @@ Project: Igho
 - Catalyst project ID: `8644000000692021`
 - server runtime: Advanced I/O Function
 - function: `igho-api`
-- frontend: Slate
+- frontend: Web Client Hosting
 - public API routing: API Gateway
 
 The Function must be built before Catalyst deployment so `functions/igho-api/index.js` exists.

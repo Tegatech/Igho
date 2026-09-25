@@ -12,7 +12,7 @@ Igho's production API is a single Catalyst Advanced I/O Function.
 
 ## Authentication flow
 
-Slate authenticates directly with Neon Managed Better Auth. Neon returns the session/JWT to the browser. Requests to Igho's protected API include:
+The hosted web client authenticates directly with Neon Managed Better Auth. Neon returns the session/JWT to the browser. Requests to Igho's protected API include:
 
 ```http
 Authorization: Bearer <session.access_token>
@@ -32,7 +32,7 @@ Required:
 
 Recommended:
 
-- `IGHO_PUBLIC_ORIGIN` — exact Slate origin allowed by CORS
+- `IGHO_PUBLIC_ORIGIN` — exact Web Client Hosting origin allowed by CORS
 
 `NEON_AUTH_COOKIE_SECRET` is **not used** in this architecture. It was required only by the discarded Next.js server adapter.
 
