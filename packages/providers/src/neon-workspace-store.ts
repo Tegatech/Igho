@@ -22,7 +22,7 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
       authUserId: string;
       email: string;
     }): Promise<AccessContext | null> {
-      const rows = await sql<MembershipRow[]>`
+      const rows = (await sql`
         select wm.id::text as membership_id, wm.workspace_id::text as workspace_id, r.role_key
         from public.workspace_memberships wm
         join public.membership_role_assignments mra on mra.membership_id = wm.id
@@ -30,7 +30,7 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
         where wm.auth_user_id = ${input.authUserId}::uuid
           and wm.status = 'active' and wm.deleted_at is null
         order by wm.created_at asc, r.role_key asc
-      `;
+      `) as MembershipRow[];
       const first = rows[0];
       if (!first) return null;
       const roles = rows
@@ -47,9 +47,7 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
     },
 
     async activeMembershipCount(): Promise<number> {
-      const rows = await sql<
-        { count: number }[]
-      >`select count(*)::int as count from public.workspace_memberships where deleted_at is null`;
+      const rows = (await sql`select count(*)::int as count from public.workspace_memberships where deleted_at is null`) as { count: number }[];
       return rows[0]?.count ?? 0;
     },
 
@@ -59,7 +57,7 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
       displayName: string;
       requestId: string;
     }): Promise<string | null> {
-      const rows = await sql<{ membership_id: string }[]>`
+      const rows = (await sql`
         with profile as (
           insert into public.user_profiles (auth_user_id, display_name, created_by)
           values (${input.authUserId}::uuid, ${input.displayName}, ${input.authUserId}::uuid)
@@ -78,7 +76,7 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
           from membership m
         )
         select id::text as membership_id from membership
-      `;
+      `) as { membership_id: string }[];
       return rows[0]?.membership_id ?? null;
     },
 
@@ -92,7 +90,7 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
       const token = randomBytes(32).toString("base64url");
       const tokenHash = createHash("sha256").update(token).digest("hex");
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-      const rows = await sql<{ id: string }[]>`
+      const rows = (await sql`
         with invitation as (
           insert into public.workspace_invitations (workspace_id, email, role_id, token_hash, invited_by, expires_at)
           select ${input.workspaceId}::uuid, ${input.email}, r.id, ${tokenHash}, ${input.actorAuthUserId}::uuid, ${expiresAt}::timestamptz
@@ -104,7 +102,7 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
           from invitation i
         )
         select id::text from invitation
-      `;
+      `) as { id: string }[];
       const id = rows[0]?.id;
       return id ? { invitationId: id, token, expiresAt } : null;
     },
@@ -117,16 +115,16 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
       requestId: string;
     }): Promise<{ workspaceId: string; membershipId: string } | null> {
       const tokenHash = createHash("sha256").update(input.token).digest("hex");
-      const invites = await sql<InvitationRow[]>`
+      const invites = (await sql`
         select id::text, workspace_id::text, email, role_id::text
         from public.workspace_invitations
         where token_hash = ${tokenHash} and status = 'pending' and deleted_at is null and expires_at > now()
         limit 1
-      `;
+      `) as InvitationRow[];
       const invite = invites[0];
       if (!invite || invite.email.toLowerCase() !== input.email.toLowerCase()) return null;
 
-      const rows = await sql<{ workspace_id: string; membership_id: string }[]>`
+      const rows = (await sql`
         with profile as (
           insert into public.user_profiles (auth_user_id, display_name, created_by)
           values (${input.authUserId}::uuid, ${input.displayName}, ${input.authUserId}::uuid)
@@ -147,8 +145,11 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
           from membership m
         )
         select workspace_id::text, id::text as membership_id from membership
-      `;
-      return rows[0] ?? null;
+      `) as { workspace_id: string; membership_id: string }[];
+      const accepted = rows[0];
+      return accepted
+        ? { workspaceId: accepted.workspace_id, membershipId: accepted.membership_id }
+        : null;
     },
   };
 }
