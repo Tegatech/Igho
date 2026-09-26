@@ -59,14 +59,6 @@
   function employeeNet(p){return p.pay+adjustmentTotal(p)}
   calcRunTotal=function(){return includedPeople().reduce((s,p)=>s+employeeNet(p),0)};
 
-  const style=document.createElement("style");
-  style.textContent=`
-    .scope-note{margin:0 0 16px;padding:12px 14px;border:1px solid var(--line);background:#fbfaf7;border-radius:var(--radius);font-size:11px;line-height:1.55;color:var(--muted)}
-    .scope-note strong{color:var(--navy)}
-    .adjustment-list{display:grid;gap:7px;margin-top:10px}.adjustment-item{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:11px}.adjustment-item:last-child{border-bottom:0}.adjustment-positive{color:var(--green)}.adjustment-negative{color:var(--red)}
-    .proof-note{padding:10px 12px;background:var(--paper);border-radius:var(--radius-sm);font-size:10px;line-height:1.5;color:var(--muted);margin-top:14px}
-  `;
-  document.head.appendChild(style);
 
   document.querySelector('#overview .page-title').textContent='October payroll';
   document.querySelector('#payrollrun .page-title').textContent='October 2026 Payroll';
@@ -91,7 +83,7 @@
     document.getElementById('overviewPayrollCard').innerHTML=`
       <div class="payroll-top"><div><div class="eyebrow">Payroll run</div><div class="payroll-name">The24thGroup — ${run.period}</div><div class="muted">${all} staff · Pay ${run.date}</div></div><div><div class="eyebrow">Net payroll</div><div class="money">${money(total)}</div><div class="muted">Prep + change cutoff: ${run.cutoffDate}</div></div></div>
       <div class="progress"><div class="step ${stage>0?'done':stage===0?'current':''}"><b>01 · READINESS</b><small>${ready}/${all} ready</small></div><div class="step ${stage>1?'done':stage===1?'current':''}"><b>02 · FUNDING</b><small>${run.funding}</small></div><div class="step ${stage>2?'done':stage===2?'current':''}"><b>03 · APPROVAL</b><small>${run.approval}</small></div><div class="step ${stage>=4?'done':stage===3?'current':''}"><b>04 · PAYMENT</b><small>${run.status}</small></div></div>
-      <div class="scope-note"><strong>V1 payroll rule:</strong> changes made after ${run.cutoffDate} apply to the next payroll. The configured payday stays ${run.date} even if it falls on a weekend or bank holiday.</div>
+      <div class="scope-note"><strong>Payroll rule:</strong> changes made after ${run.cutoffDate} apply to the next payroll. The configured payday stays ${run.date} even if it falls on a weekend or bank holiday.</div>
       <div class="actions-row"><button class="btn secondary" onclick="goPage('payrollrun')">Open payroll</button></div>`;
     document.getElementById('attentionCount').textContent=`${issueList.length} item${issueList.length===1?'':'s'}`;
     document.getElementById('attentionList').innerHTML=issueList.length?issueList.map(p=>`<div class="attention-row"><div class="attention-dot"></div><div><strong>${p.name}</strong><small>${p.bankStatus}</small></div><button class="btn ghost" onclick="openPerson('${p.id}')">Review</button></div>`).join(''):`<div class="attention-row"><div class="attention-dot" style="background:var(--green)"></div><div><strong>Payroll ready</strong><small>No recipient issues remain.</small></div></div>`;
@@ -125,7 +117,7 @@
   renderRun=function(){
     const run=currentRun(),all=includedPeople(),ready=readyPeople(),issue=issues(),total=calcRunTotal();
     document.getElementById('runSubtitle').textContent=`${run.id} · ${all.length} staff · pay date ${run.date} · cutoff ${run.cutoffDate}`;
-    document.getElementById('runStats').innerHTML=`<div class="run-stat"><span>Net payroll</span><strong>${money(total)}</strong></div><div class="run-stat"><span>Ready</span><strong>${ready.length} / ${all.length}</strong></div><div class="run-stat"><span>Funding</span><strong style="font-size:13px">${status(run.funding)}</strong></div><div class="run-stat"><span>Approval</span><strong style="font-size:13px">${status(run.approval)}</strong></div>`;
+    document.getElementById('runStats').innerHTML=`<div class="run-stat"><span>Net payroll</span><strong>${money(total)}</strong></div><div class="run-stat"><span>Ready</span><strong>${ready.length} / ${all.length}</strong></div><div class="run-stat"><span>Funding</span><strong>${status(run.funding)}</strong></div><div class="run-stat"><span>Approval</span><strong>${status(run.approval)}</strong></div>`;
     const rows=document.getElementById('recipientRows'),mob=document.getElementById('recipientMobile');rows.innerHTML='';mob.innerHTML='';
     all.forEach(p=>{const isReady=p.bankStatus==='Verified',adj=adjustmentTotal(p),net=employeeNet(p),transfer=run.status==='Settled'?'Settled':run.status==='Processing'?'Processing':isReady?'Not started':'Blocked';
       const tr=document.createElement('tr');tr.className='clickable';tr.onclick=()=>openPerson(p.id);tr.innerHTML=`<td class="person"><strong>${p.name}</strong><small>${p.role}</small></td><td>${p.bank?`${p.bank} · •••• ${p.account}`:'Action required'}</td><td>${money(p.pay)}</td><td><button class="btn ghost" onclick="event.stopPropagation();openAdjustment('${p.id}')">${adj?money(adj):'Add'}</button></td><td><strong>${money(net)}</strong></td><td>${status(isReady?'Ready':'Action required')}</td><td>${status(transfer)}</td>`;rows.appendChild(tr);
