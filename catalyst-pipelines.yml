@@ -43,9 +43,22 @@ jobs:
       - npm install -g zcatalyst-cli
       - catalyst -v
 
+      # The function deploy sets its environment variables from the pipeline
+      # variables below; a plain `catalyst deploy` would wipe them. It refuses
+      # to deploy if any required variable is missing.
+      - >-
+        DATABASE_URL='<< env.DATABASE_URL >>'
+        NEON_AUTH_BASE_URL='<< env.NEON_AUTH_BASE_URL >>'
+        BOOTSTRAP_OWNER_EMAIL='<< env.BOOTSTRAP_OWNER_EMAIL >>'
+        IGHO_PUBLIC_ORIGIN='<< env.IGHO_PUBLIC_ORIGIN >>'
+        PROJECT_ID='<< env.PROJECT_ID >>'
+        CATALYST_ORG='<< env.CATALYST_ORG >>'
+        node infrastructure/scripts/deploy-function.mjs
+        --token << env.CATALYST_TOKEN >>
+
       - >-
         catalyst deploy
-        --only functions:igho-api,client
+        --only client
         --project << env.PROJECT_ID >>
         --org << env.CATALYST_ORG >>
         --token << env.CATALYST_TOKEN >>
