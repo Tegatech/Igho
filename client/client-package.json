@@ -1,0 +1,7 @@
+{
+  "name": "igho",
+  "version": "0.0.2",
+  "description": "Igho development web client",
+  "homepage": "index.html",
+  "login_redirect": "auth.html"
+}
