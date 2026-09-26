@@ -6,3 +6,7 @@
 .adjustment-positive{color:var(--green)}
 .adjustment-negative{color:var(--red)}
 .proof-note{padding:10px 12px;background:var(--paper);border-radius:var(--radius-sm);font-size:var(--text-2xs);line-height:1.5;color:var(--muted);margin-top:14px}
+
+.adjustment-field{margin-bottom:10px}
+.adjustment-reason{display:block;color:var(--muted);margin-top:2px;font-size:var(--text-2xs)}
+.mini-item.clickable{cursor:pointer}
