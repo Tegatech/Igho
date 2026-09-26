@@ -25,8 +25,6 @@ async function initialiseLiveMode() {
   const me = await ighoApi.me();
   const data = me.data;
 
-  const env = document.querySelector(".env");
-  if (env) env.textContent = "LIVE DEV";
 
   const card = document.querySelector(".sidebar-foot .user-card");
   if (card) {
@@ -70,17 +68,16 @@ function escapeHtml(value) {
 }
 
 function showRuntimeError(error) {
-  const env = document.querySelector(".env");
-  if (env) env.textContent = "LIVE ERROR";
+
   const message =
     error?.status === 403
       ? "Your account is signed in but does not have an Igho workspace membership yet."
-      : error?.message || "The live Igho API could not be reached.";
+      : error?.message || "Igho could not connect to your workspace.";
   const toast = document.getElementById("toast");
   if (toast) {
     const title = document.getElementById("toastTitle");
     const text = document.getElementById("toastText");
-    if (title) title.textContent = "Live connection";
+    if (title) title.textContent = "Connection issue";
     if (text) text.textContent = message;
     toast.classList.add("show");
   }
