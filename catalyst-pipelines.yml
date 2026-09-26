@@ -1,0 +1,62 @@
+version: 1
+
+runners:
+  Machine:
+    config-id: 2
+
+images:
+  DeployMachine:
+    image: ubuntu
+    auth:
+      username: << env.USER_NAME >>
+      password: << env.USER_PASSWORD >>
+
+jobs:
+  Quality_Check:
+    steps:
+      - apt-get update
+      - apt-get install -y curl
+
+      - curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+      - apt-get install -y nodejs
+
+      - node --version
+      - npm --version
+
+      - npm install --legacy-peer-deps --no-audit --no-fund
+      - npm run quality
+
+  Deploy_Igho:
+    steps:
+      - apt-get update
+      - apt-get install -y curl
+
+      - curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+      - apt-get install -y nodejs
+
+      - node --version
+      - npm --version
+
+      - npm install --legacy-peer-deps --no-audit --no-fund
+      - npm run build
+
+      - npm install -g zcatalyst-cli
+      - catalyst -v
+
+      - >-
+        catalyst deploy
+        --only functions:igho-api,client
+        --project << env.PROJECT_ID >>
+        --org << env.CATALYST_ORG >>
+        --token << env.CATALYST_TOKEN >>
+
+stages:
+  - name: quality
+    image: DeployMachine
+    jobs:
+      - Quality_Check
+
+  - name: deploy
+    image: DeployMachine
+    jobs:
+      - Deploy_Igho
