@@ -22,7 +22,7 @@ function renderOverview(){
   <div class="step ${stage>=4?"done":stage===3?"current":""}"><b>04 · PAYMENT</b><small>${run.status}</small></div>
  </div><div class="actions-row"><button class="btn secondary" onclick="goPage('payrollrun')">Open payroll</button></div>`;
  document.getElementById("attentionCount").textContent=`${issueList.length} item${issueList.length===1?"":"s"}`;
- document.getElementById("attentionList").innerHTML=issueList.length?issueList.map(p=>`<div class="attention-row"><div class="attention-dot"></div><div><strong>${p.name}</strong><small>${p.bankStatus}</small></div><button class="btn ghost" onclick="openPerson('${p.id}')">Review</button></div>`).join(""):`<div class="attention-row"><div class="attention-dot" style="background:var(--green)"></div><div><strong>Payroll ready</strong><small>No recipient issues remain.</small></div></div>`;
+ document.getElementById("attentionList").innerHTML=issueList.length?issueList.map(p=>`<div class="attention-row"><div class="attention-dot"></div><div><strong>${p.name}</strong><small>${p.bankStatus}</small></div><button class="btn ghost" onclick="openPerson('${p.id}')">Review</button></div>`).join(""):`<div class="attention-row"><div class="attention-dot ready-dot"></div><div><strong>Payroll ready</strong><small>No recipient issues remain.</small></div></div>`;
 }
 function peopleFiltered(){
  const q=document.getElementById("peopleSearch")?.value.toLowerCase()||"", st=document.getElementById("peopleStatus")?.value||"", bk=document.getElementById("peopleBank")?.value||"";
@@ -32,7 +32,7 @@ function renderPeople(){
  const list=peopleFiltered(), active=state.people.filter(p=>p.status==="Active").length, verified=state.people.filter(p=>p.bankStatus==="Verified").length;
  document.getElementById("peopleNavCount").textContent=128+(state.people.length-BASE_PEOPLE.length);
  document.getElementById("peopleStats").innerHTML=`<div class="count-pill info"><strong>${128+(state.people.length-BASE_PEOPLE.length)}</strong> total</div><div class="count-pill good"><strong>${active+118}</strong> active</div><div class="count-pill good"><strong>${verified+111}</strong> verified</div><div class="count-pill bad"><strong>${state.people.filter(p=>p.status==="Inactive").length+4}</strong> inactive</div>`;
- document.getElementById("peopleRange").textContent=`Showing ${Math.min(list.length,25)} demo records · ${128+(state.people.length-BASE_PEOPLE.length)} total`;
+ document.getElementById("peopleRange").textContent=`Showing ${Math.min(list.length,25)} of ${128+(state.people.length-BASE_PEOPLE.length)} people`;
  const rows=document.getElementById("peopleRows"), mobile=document.getElementById("peopleMobile");rows.innerHTML="";mobile.innerHTML="";
  list.slice(0,25).forEach(p=>{
   const tr=document.createElement("tr");tr.className="clickable";tr.onclick=()=>openPerson(p.id);tr.innerHTML=`<td><input class="checkbox person-check" data-id="${p.id}" type="checkbox" onclick="event.stopPropagation()"></td><td class="person"><strong>${p.name}</strong><small>${p.email}</small></td><td>${p.role}</td><td>${money(p.pay)}</td><td>${status(p.bankStatus)}</td><td>${status(p.included?"Included":"Not included")}</td><td>${p.lastPaid||"—"}</td>`;rows.appendChild(tr);
@@ -43,5 +43,5 @@ function renderPeople(){
 function bindChecks(){document.querySelectorAll(".person-check").forEach(c=>c.onchange=updateBulk)}
 function selectedIds(){return [...document.querySelectorAll(".person-check:checked")].map(c=>c.dataset.id)}
 function updateBulk(){const n=selectedIds().length;document.getElementById("selectedCount").textContent=`${n} selected`;document.getElementById("peopleBulk").classList.toggle("show",n>0)}
-function bulkInclude(){const ids=selectedIds();state.people.forEach(p=>{if(ids.includes(p.id))p.included=true});log("People included in payroll",`${ids.length} people`,"Johannes Oghoro","Employee");save();toast("People included",`${ids.length} selected people added to August payroll.`);render()}
+function bulkInclude(){const ids=selectedIds();state.people.forEach(p=>{if(ids.includes(p.id))p.included=true});log("People included in payroll",`${ids.length} people`,"Johannes Oghoro","Employee");save();toast("People included",`${ids.length} selected people added to ${currentRun().period} payroll.`);render()}
 function bulkInactive(){const ids=selectedIds();state.people.forEach(p=>{if(ids.includes(p.id)){p.status="Inactive";p.included=false}});log("People marked inactive",`${ids.length} people`,"Johannes Oghoro","Employee");save();toast("People updated",`${ids.length} selected people marked inactive.`);render()}
