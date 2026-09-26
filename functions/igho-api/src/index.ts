@@ -38,6 +38,18 @@ interface AuthenticatedRequest extends Request {
 
 async function authenticate(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   const id = requestId(req);
+
+  console.info(
+    JSON.stringify({
+      level: "info",
+      event: "auth_request_received",
+      request_id: id,
+      method: req.method,
+      path: req.path,
+      authorization_header_present: Boolean(req.header("authorization")),
+    }),
+  );
+
   const identity = await verifyBearer(req.header("authorization"));
 
   if (!identity) {
