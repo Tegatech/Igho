@@ -24,7 +24,8 @@ export async function apiRequest(path, options = {}) {
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      // Not `Authorization`: Catalyst's API Gateway rejects non-Zoho Bearer tokens.
+      "X-Igho-Authorization": `Bearer ${token}`,
       ...(options.headers || {}),
     },
   });

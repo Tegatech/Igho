@@ -19,7 +19,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   if (env.publicOrigin && origin === env.publicOrigin) {
     res.setHeader("Access-Control-Allow-Origin", env.publicOrigin);
     res.setHeader("Vary", "Origin");
-    res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Request-Id");
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Authorization, X-Igho-Authorization, Content-Type, X-Request-Id",
+    );
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS");
   }
 
@@ -38,6 +41,9 @@ interface AuthenticatedRequest extends Request {
 
 async function authenticate(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   const id = requestId(req);
+  // Catalyst's API Gateway treats `Authorization: Bearer` as a Zoho OAuth token and
+  // rejects Neon JWTs before they reach the function, so the client uses its own header.
+  const authorization = req.header("x-igho-authorization") ?? req.header("authorization");
 
   console.info(
     JSON.stringify({
@@ -46,11 +52,11 @@ async function authenticate(req: AuthenticatedRequest, res: Response, next: Next
       request_id: id,
       method: req.method,
       path: req.path,
-      authorization_header_present: Boolean(req.header("authorization")),
+      authorization_header_present: Boolean(authorization),
     }),
   );
 
-  const identity = await verifyBearer(req.header("authorization"));
+  const identity = await verifyBearer(authorization);
 
   if (!identity) {
     fail(res, id, 401, "AUTH_001", "Authentication required");
