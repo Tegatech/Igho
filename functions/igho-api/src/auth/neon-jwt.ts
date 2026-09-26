@@ -27,7 +27,7 @@ export function createNeonJwtVerifier(neonAuthBaseUrl: string) {
 
     if (!bearerFormatValid) return null;
 
-    const token = authorization!.slice("Bearer ".length).trim();
+    const token = authorization?.slice("Bearer ".length).trim() ?? "";
     if (!token) {
       console.warn(
         JSON.stringify({
