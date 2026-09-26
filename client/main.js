@@ -1,4 +1,4 @@
-(async function loadIghoDemo(){
+(async function loadIghoClient(){
   const scripts = [
     "js/bootstrap.js",
     "js/data.js",
@@ -9,8 +9,7 @@
     "js/responsive.js",
     "js/ui-polish.js",
     "js/v1-scope.js",
-    "js/employee-portal.js",
-    "js/branding.js"
+    "js/employee-portal.js"
   ];
   for (const src of scripts) {
     await new Promise((resolve, reject) => {
@@ -22,5 +21,5 @@
     });
   }
 })().catch(function(error){
-  console.error("Igho demo failed to initialise", error);
+  console.error("Igho client failed to initialise", error);
 });
