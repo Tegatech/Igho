@@ -1,0 +1,8 @@
+.scope-note{margin:0 0 16px;padding:12px 14px;border:1px solid var(--line);background:#FBFAF7;border-radius:var(--radius);font-size:var(--text-xs);line-height:1.55;color:var(--muted)}
+.scope-note strong{color:var(--navy);font-weight:var(--weight-semibold)}
+.adjustment-list{display:grid;gap:7px;margin-top:10px}
+.adjustment-item{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:var(--text-xs)}
+.adjustment-item:last-child{border-bottom:0}
+.adjustment-positive{color:var(--green)}
+.adjustment-negative{color:var(--red)}
+.proof-note{padding:10px 12px;background:var(--paper);border-radius:var(--radius-sm);font-size:var(--text-2xs);line-height:1.5;color:var(--muted);margin-top:14px}
