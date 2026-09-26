@@ -39,3 +39,13 @@ button,input,select{font:inherit}button{cursor:pointer}a{color:inherit;text-deco
 .content-block{margin-top:20px}
 .content-block-sm{margin-top:10px}
 .content-action{margin-top:13px}
+
+.topbar-identity{display:flex;align-items:center;gap:9px;min-width:0}
+.stack-md{display:grid;gap:12px}
+.surface-gap{margin-bottom:16px}
+.run-state-value{font-size:var(--text-md);font-weight:var(--weight-semibold)}
+.portal-money{margin-top:7px}
+.portal-note{margin-top:5px}
+.portal-card-gap{margin-top:20px}
+.portal-block-gap{margin-top:10px}
+.portal-action-gap{margin-top:13px}
