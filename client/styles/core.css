@@ -49,3 +49,7 @@ button,input,select{font:inherit}button{cursor:pointer}a{color:inherit;text-deco
 .portal-card-gap{margin-top:20px}
 .portal-block-gap{margin-top:10px}
 .portal-action-gap{margin-top:13px}
+
+.filter-clear{display:none}
+.select-col{width:38px}
+.employee-action-gap{margin-top:16px}
