@@ -1,7 +1,8 @@
-import { createAuthClient } from "https://esm.sh/@neondatabase/neon-js@0.7.0-beta/auth";
+import { createInternalNeonAuth } from "https://esm.sh/@neondatabase/neon-js@0.7.0-beta/auth";
 import { IGHO_RUNTIME } from "./runtime-config.js";
 
-export const authClient = createAuthClient(IGHO_RUNTIME.neonAuthBaseUrl);
+const neonAuth = createInternalNeonAuth(IGHO_RUNTIME.neonAuthBaseUrl);
+export const authClient = neonAuth.adapter;
 
 function authError(result, fallback) {
   const error = result?.error;
@@ -37,6 +38,5 @@ export async function getSession() {
 }
 
 export async function getAccessToken() {
-  const session = await getSession();
-  return session?.session?.token || null;
+  return neonAuth.getJWTToken();
 }
