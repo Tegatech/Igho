@@ -1,0 +1,72 @@
+#employee{padding:0!important;background:var(--paper);min-height:100%}
+.employee-portal-shell{min-height:100%;background:var(--paper);color:var(--navy)}
+.employee-portal-top{height:68px;background:var(--white);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:4}
+.employee-brand{display:flex;align-items:center;gap:10px}
+.employee-brand-mark{width:26px;height:26px;flex:0 0 auto}
+.employee-brand-wordmark{width:64px;height:auto}
+.employee-brand small{font-size:var(--text-2xs);font-weight:var(--weight-semibold);color:var(--muted);letter-spacing:.05em;text-transform:uppercase;border-left:1px solid var(--line);padding-left:10px}
+.employee-top-actions{display:flex;align-items:center;gap:10px}
+.employee-top-user{text-align:right}
+.employee-top-user strong{display:block;font-size:var(--text-sm);font-weight:var(--weight-semibold)}
+.employee-top-user span{display:block;font-size:var(--text-2xs);color:var(--muted);margin-top:2px}
+.employee-portal-layout{display:grid;grid-template-columns:210px minmax(0,760px);gap:42px;max-width:1080px;margin:0 auto;padding:38px 28px 64px}
+.employee-portal-nav{position:sticky;top:106px;align-self:start}
+.employee-identity{padding-bottom:22px;margin-bottom:14px;border-bottom:1px solid var(--line)}
+.employee-avatar{width:42px;height:42px;border-radius:50%;background:var(--navy);color:var(--white);display:grid;place-items:center;font-weight:var(--weight-bold);font-size:var(--text-lg);margin-bottom:12px}
+.employee-identity strong{display:block;font-size:var(--text-lg);font-weight:var(--weight-semibold)}
+.employee-identity span{display:block;color:var(--muted);font-size:var(--text-xs);margin-top:4px}
+.employee-nav-link{width:100%;border:0;background:transparent;text-align:left;padding:10px 8px;border-radius:var(--radius-sm);color:var(--muted);font:inherit;font-size:var(--text-sm);font-weight:var(--weight-semibold);cursor:pointer;margin-bottom:2px}
+.employee-nav-link:hover{background:var(--white)}
+.employee-nav-link.active{background:var(--white);color:var(--navy)}
+.employee-content{min-width:0}
+.employee-page-eyebrow{font-size:var(--text-2xs);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:var(--weight-bold)}
+.employee-page-title{font-size:var(--text-2xl);line-height:1.1;letter-spacing:-.03em;margin:8px 0 6px;font-weight:var(--weight-bold)}
+.employee-page-sub{color:var(--muted);font-size:var(--text-sm);line-height:1.6;margin:0 0 24px}
+.employee-hero{background:var(--navy);color:var(--white);padding:26px 28px;border-radius:var(--radius);margin-bottom:18px}
+.employee-hero-label{font-size:var(--text-2xs);text-transform:uppercase;letter-spacing:.11em;color:rgba(255,255,255,.62);font-weight:var(--weight-bold)}
+.employee-hero-amount{font-size:var(--text-money);letter-spacing:-.04em;font-weight:var(--weight-bold);margin:8px 0 12px}
+.employee-hero-meta{display:flex;gap:22px;flex-wrap:wrap}
+.employee-hero-meta div span{display:block;font-size:var(--text-2xs);text-transform:uppercase;letter-spacing:.09em;color:rgba(255,255,255,.55);margin-bottom:3px}
+.employee-hero-meta div strong{font-size:var(--text-xs);font-weight:var(--weight-semibold)}
+.employee-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.employee-card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.employee-card.full{grid-column:1/-1}
+.employee-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px}
+.employee-card h3{font-size:var(--text-md);font-weight:var(--weight-semibold);margin:0}
+.employee-card p{font-size:var(--text-xs);color:var(--muted);line-height:1.55;margin:4px 0 0}
+.employee-kv{display:flex;justify-content:space-between;gap:18px;padding:10px 0;border-bottom:1px solid var(--line);font-size:var(--text-xs)}
+.employee-kv:last-child{border-bottom:0}
+.employee-kv span{color:var(--muted)}
+.employee-kv strong{text-align:right;font-weight:var(--weight-semibold)}
+.employee-net{font-size:var(--text-lg)!important}
+.employee-positive{color:var(--green)}
+.employee-negative{color:var(--red)}
+.employee-status{display:inline-flex;align-items:center;gap:6px;font-size:var(--text-2xs);font-weight:var(--weight-bold);text-transform:uppercase;letter-spacing:.05em}
+.employee-status:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green)}
+.employee-status.attention:before{background:var(--amber)}
+.employee-slip{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:18px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.employee-slip:last-child{border-bottom:0}
+.employee-slip strong{font-size:var(--text-sm);font-weight:var(--weight-semibold)}
+.employee-slip span{display:block;font-size:var(--text-xs);color:var(--muted);margin-top:3px}
+.employee-slip-amount{font-size:var(--text-sm);font-weight:var(--weight-bold)}
+.employee-slip button{white-space:nowrap}
+.employee-notice{padding:12px 14px;border:1px solid #E5CE94;background:var(--goldSoft);border-radius:var(--radius-sm);font-size:var(--text-xs);line-height:1.55;color:#694800;margin-top:14px}
+.employee-proof{font-size:var(--text-xs);line-height:1.6;color:var(--muted);padding-top:12px;margin-top:12px;border-top:1px solid var(--line)}
+.employee-profile-row{display:grid;grid-template-columns:150px 1fr;padding:11px 0;border-bottom:1px solid var(--line);font-size:var(--text-xs)}
+.employee-profile-row span{color:var(--muted)}
+.employee-mobile-tabs{display:none}
+@media(max-width:760px){
+ .employee-portal-top{padding:0 16px;height:60px}
+ .employee-brand small,.employee-top-user{display:none}
+ .employee-portal-layout{display:block;padding:22px 16px 40px}
+ .employee-portal-nav{display:none}
+ .employee-mobile-tabs{display:flex;overflow-x:auto;gap:6px;margin:0 -16px 22px;padding:0 16px 4px}
+ .employee-mobile-tabs .employee-nav-link{width:auto;white-space:nowrap;background:var(--white);border:1px solid var(--line);padding:9px 12px}
+ .employee-mobile-tabs .employee-nav-link.active{background:var(--navy);color:var(--white);border-color:var(--navy)}
+ .employee-grid{grid-template-columns:1fr}
+ .employee-card.full{grid-column:auto}
+ .employee-hero{padding:22px 20px}
+ .employee-slip{grid-template-columns:1fr auto}
+ .employee-slip button{grid-column:1/-1;width:100%}
+ .employee-profile-row{grid-template-columns:1fr;gap:4px}
+}
