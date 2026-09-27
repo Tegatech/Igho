@@ -172,5 +172,43 @@
   const oldGoPage=goPage;goPage=function(id){oldGoPage(id);if(id==='payrollrun')document.getElementById('breadcrumb').textContent='The24thGroup / October 2026 Payroll'};
   document.getElementById('resetBtn').onclick=()=>{if(confirm('Reset this workspace view to its starting state?')){state=makeV1State();save();render();goPage('overview');toast('Workspace reset','The payroll starting state has been restored.')}};
 
+  function apiEmployeeToState(employee){
+    const bank=employee.bankAccount||{};
+    return {
+      id:employee.id,
+      name:employee.fullName,
+      role:employee.jobTitle,
+      email:employee.email,
+      pay:Number(employee.monthlyPayAmount||0),
+      startDate:employee.employmentStartDate||"—",
+      bank:bank.bankName||"",
+      account:bank.accountNumberLast4||"",
+      bankStatus:bank.verificationStatus==="verified"?"Verified":bank.verificationStatus==="pending"?"Pending":"Action required",
+      status:employee.status==="inactive"?"Inactive":"Active",
+      lastPaid:"—",
+      included:employee.status==="active",
+      adjustments:[]
+    };
+  }
+
+  window.hydratePeopleFromApi=function(items){
+    if(!Array.isArray(items))return;
+    state.people=items.map(apiEmployeeToState);
+    if(state.people.length&&!state.people.some(p=>p.id===state.currentPerson))state.currentPerson=state.people[0].id;
+    save();
+    render();
+  };
+
+  window.hydrateEmployeeFromApi=function(employee){
+    if(!employee)return;
+    const mapped=apiEmployeeToState(employee);
+    const index=state.people.findIndex(p=>p.id===mapped.id);
+    if(index>=0)state.people[index]=mapped;
+    else state.people=[mapped];
+    state.currentPerson=mapped.id;
+    save();
+    render();
+  };
+
   render();
 })();
