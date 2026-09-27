@@ -7,8 +7,73 @@ function toggleInclude(id){const p=state.people.find(x=>x.id===id);p.included=!p
 function openPayroll(id){const r=state.payrolls.find(x=>x.id===id);openDrawer(r.period,`${r.people} people · ${money(r.net)}`,`<div class="kv"><span>Pay date</span><strong>${r.date}</strong></div><div class="kv"><span>Funding</span>${status(r.funding)}</div><div class="kv"><span>Approval</span>${status(r.approval)}</div><div class="kv"><span>Status</span>${status(r.status)}</div>`,`<div class="mini-item"><strong>Payroll prepared</strong><small>Scheduler</small></div>`,`<div class="mini-item"><strong>${r.id}</strong><small>Immutable payroll reference</small></div>`,"Open payroll",()=>{closeDrawer();goPage(r.id==="PR-2026-08-001"?"payrollrun":"payroll")})}
 function openPayment(id){const p=state.payments.find(x=>x.id===id);openDrawer(p.id,`${p.type} · ${p.status}`,`<div class="kv"><span>Description</span><strong>${p.desc}</strong></div><div class="kv"><span>Amount</span><strong>${money(p.amount)}</strong></div><div class="kv"><span>Date</span><strong>${p.date}</strong></div><div class="kv"><span>Status</span>${status(p.status)}</div><div class="kv"><span>Provider</span><strong>Paystack</strong></div>`,`<div class="mini-item"><strong>Provider event</strong><small>${p.status}</small></div>`,`<div class="mini-item"><strong>Audit record</strong><small>${p.id}</small></div>`,"Close",closeDrawer)}
 function previewPayslip(id){const s=state.payslips.find(x=>x.id===id);openDrawer(`${s.person} · ${s.period}`,"Payslip",`<div class="eyebrow">The24thGroup</div><h2 class="document-title">Payslip</h2><div class="kv"><span>Employee</span><strong>${s.person}</strong></div><div class="kv"><span>Net pay</span><strong>${money(s.amount)}</strong></div><div class="kv"><span>Period</span><strong>${s.period}</strong></div><div class="kv"><span>Status</span>${status(s.status)}</div>`,`<div class="mini-item"><strong>Generated</strong><small>${s.date}</small></div>`,`<div class="mini-item"><strong>${s.id}</strong><small>Document reference</small></div>`,"Download PDF",()=>toast("Payslip ready","Payslip export is not enabled yet."))}
-function startBankUpdate(id){const p=state.people.find(x=>x.id===id);state.currentPerson=id;document.getElementById("resolvedName").value=p.name;document.getElementById("accountNumber").value=p.account?("000000"+p.account).slice(-10):"";closeDrawer();openModal("bankModal")}
-document.getElementById("bankConfirm").onclick=()=>{const p=state.people.find(x=>x.id===state.currentPerson),acct=document.getElementById("accountNumber").value.trim();if(!/^\d{10}$/.test(acct)){toast("Check account number","Enter a valid 10-digit account number.");return}p.bank=document.getElementById("bankName").value;p.account=acct.slice(-4);p.bankStatus="Verified";log("Bank account verified",`${p.id} · ${p.name}`,"System","Bank account");save();closeModal("bankModal");render();toast("Bank account verified",`${p.name} is now ready for payroll.`)}
+async function startBankUpdate(id){
+  const p=state.people.find(x=>x.id===id);
+  if(!p)return;
+  state.currentPerson=id;
+  document.getElementById("resolvedName").value=p.bankStatus==="Verified"?p.name:"";
+  document.getElementById("accountNumber").value="";
+  closeDrawer();
+  openModal("bankModal");
+
+  const roles=window.IghoLive?.me?.roles||[];
+  if(!roles.includes("EMPLOYEE"))return;
+
+  const select=document.getElementById("bankName");
+  select.disabled=true;
+  select.innerHTML='<option value="">Loading banks…</option>';
+  try{
+    const response=await window.IghoLive.api.banks();
+    const items=response?.data?.items||[];
+    select.innerHTML='<option value="">Select bank</option>'+items.map(bank=>`<option value="${bank.code}">${bank.name}</option>`).join("");
+  }catch(error){
+    select.innerHTML='<option value="">Could not load banks</option>';
+    toast("Could not load banks",error?.message||"Try again in a moment.");
+  }finally{
+    select.disabled=false;
+  }
+}
+document.getElementById("bankConfirm").onclick=async()=>{
+  const p=state.people.find(x=>x.id===state.currentPerson);
+  const acct=document.getElementById("accountNumber").value.trim();
+  const bankSelect=document.getElementById("bankName");
+  if(!p)return;
+  if(!/^\d{10}$/.test(acct)){toast("Check account number","Enter a valid 10-digit account number.");return}
+
+  const roles=window.IghoLive?.me?.roles||[];
+  if(roles.includes("EMPLOYEE")){
+    const bankCode=bankSelect.value;
+    if(!bankCode){toast("Choose your bank","Select the bank for this account.");return}
+    const button=document.getElementById("bankConfirm");
+    button.disabled=true;
+    button.textContent="Verifying…";
+    try{
+      const result=await window.IghoLive.api.saveMyBankAccount(bankCode,acct);
+      const bank=result?.data?.bank_account;
+      if(!bank)throw new Error("Igho could not read the verified account.");
+      document.getElementById("resolvedName").value=bank.account_name||"";
+      const profile=await window.IghoLive.api.myProfile();
+      window.hydrateEmployeeFromApi?.(profile?.data);
+      closeModal("bankModal");
+      toast("Bank account verified","Your salary account is ready for payroll.");
+    }catch(error){
+      toast("Bank verification failed",error?.message||"Check the details and try again.");
+    }finally{
+      button.disabled=false;
+      button.textContent="Verify & save";
+    }
+    return;
+  }
+
+  p.bank=bankSelect.options[bankSelect.selectedIndex]?.text||bankSelect.value;
+  p.account=acct.slice(-4);
+  p.bankStatus="Verified";
+  log("Bank account verified",`${p.id} · ${p.name}`,"System","Bank account");
+  save();
+  closeModal("bankModal");
+  render();
+  toast("Bank account verified",`${p.name} is now ready for payroll.`);
+}
 window.preparePersonModal=function(){
   document.getElementById("personModalTitle").textContent="Add person";
   document.getElementById("personInviteFields").hidden=false;
