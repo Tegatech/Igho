@@ -184,14 +184,81 @@ app.get(
 );
 
 app.get(
+  "/api/v1/me/profile",
+  authenticate,
+  requireWorkspaceAccess,
+  async (req: AuthenticatedRequest, res) => {
+    const id = requestId(req);
+    const access = req.ighoAccess;
+    if (!access) {
+      fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
+      return;
+    }
+
+    const employee = await workspaceStore.getEmployeeForMembership({
+      workspaceId: access.workspaceId,
+      membershipId: access.membershipId,
+    });
+
+    if (!employee) {
+      fail(res, id, 404, "PEOPLE_004", "No employee record is linked to this account");
+      return;
+    }
+
+    ok(res, id, employee);
+  },
+);
+
+app.get(
   "/api/v1/me/bank-account",
   authenticate,
   requireWorkspaceAccess,
-  (req: AuthenticatedRequest, res) => {
-    ok(res, requestId(req), {
-      scope: "self",
-      status: "not_available_until_people_and_bank_milestone",
+  async (req: AuthenticatedRequest, res) => {
+    const id = requestId(req);
+    const access = req.ighoAccess;
+    if (!access) {
+      fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
+      return;
+    }
+
+    const employee = await workspaceStore.getEmployeeForMembership({
+      workspaceId: access.workspaceId,
+      membershipId: access.membershipId,
     });
+
+    if (!employee) {
+      fail(res, id, 404, "PEOPLE_004", "No employee record is linked to this account");
+      return;
+    }
+
+    ok(res, id, {
+      employee_id: employee.id,
+      bank_account: employee.bankAccount,
+    });
+  },
+);
+
+app.get(
+  "/api/v1/people",
+  authenticate,
+  requireWorkspaceAccess,
+  async (req: AuthenticatedRequest, res) => {
+    const id = requestId(req);
+    const access = req.ighoAccess;
+    if (!access) {
+      fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
+      return;
+    }
+
+    try {
+      requirePermission(access, "people.view");
+    } catch {
+      fail(res, id, 403, "AUTH_004", "Permission denied");
+      return;
+    }
+
+    const employees = await workspaceStore.listEmployees(access.workspaceId);
+    ok(res, id, { items: employees });
   },
 );
 
@@ -230,7 +297,17 @@ app.post(
       return;
     }
 
-    const body = req.body as { email?: unknown; role?: unknown };
+    const body = req.body as {
+      email?: unknown;
+      role?: unknown;
+      employee?: {
+        full_name?: unknown;
+        job_title?: unknown;
+        monthly_pay_amount?: unknown;
+        currency?: unknown;
+        employment_start_date?: unknown;
+      };
+    };
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const role = typeof body.role === "string" ? (body.role as RoleKey) : undefined;
 
@@ -239,12 +316,65 @@ app.post(
       return;
     }
 
+    let employee:
+      | {
+          fullName: string;
+          jobTitle: string;
+          monthlyPayAmount: number;
+          currency: string;
+          employmentStartDate: string | null;
+        }
+      | undefined;
+
+    if (role === "EMPLOYEE") {
+      const fullName =
+        typeof body.employee?.full_name === "string" ? body.employee.full_name.trim() : "";
+      const jobTitle =
+        typeof body.employee?.job_title === "string" ? body.employee.job_title.trim() : "";
+      const monthlyPayAmount = Number(body.employee?.monthly_pay_amount);
+      const currency =
+        typeof body.employee?.currency === "string"
+          ? body.employee.currency.trim().toUpperCase()
+          : "NGN";
+      const employmentStartDate =
+        typeof body.employee?.employment_start_date === "string" &&
+        body.employee.employment_start_date.trim()
+          ? body.employee.employment_start_date.trim()
+          : null;
+
+      if (
+        !fullName ||
+        !jobTitle ||
+        !Number.isFinite(monthlyPayAmount) ||
+        monthlyPayAmount < 0 ||
+        !/^[A-Z]{3}$/.test(currency)
+      ) {
+        fail(
+          res,
+          id,
+          422,
+          "PEOPLE_001",
+          "Employee name, job title, valid monthly pay and currency are required",
+        );
+        return;
+      }
+
+      employee = {
+        fullName,
+        jobTitle,
+        monthlyPayAmount,
+        currency,
+        employmentStartDate,
+      };
+    }
+
     const invitation = await workspaceStore.createInvitation({
       workspaceId: access.workspaceId,
       actorAuthUserId: access.authUserId,
       email,
       role: role as Exclude<RoleKey, "OWNER">,
       requestId: id,
+      employee,
     });
 
     if (!invitation) {
