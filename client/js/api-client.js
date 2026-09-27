@@ -38,10 +38,13 @@ export async function apiRequest(path, options = {}) {
 export const ighoApi = {
   me: () => apiRequest("/me"),
   bootstrap: () => apiRequest("/bootstrap", { method: "POST" }),
-  createInvitation: (email, role) =>
+  people: () => apiRequest("/people"),
+  myProfile: () => apiRequest("/me/profile"),
+  myBankAccount: () => apiRequest("/me/bank-account"),
+  createInvitation: (email, role, employee) =>
     apiRequest("/workspace-invitations", {
       method: "POST",
-      body: JSON.stringify({ email, role }),
+      body: JSON.stringify({ email, role, employee }),
     }),
   acceptInvitation: (token) =>
     apiRequest("/workspace-invitations/accept", {
