@@ -367,6 +367,5 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
       `) as { id: string }[];
       return rows[0]?.id ?? null;
     },
-
   };
 }
