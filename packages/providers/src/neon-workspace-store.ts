@@ -251,7 +251,7 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
           update public.employees
           set membership_id = m.id, status = 'active', updated_at = now()
           from membership m
-          where id = ${invite.employee_id}::uuid
+          where public.employees.id = ${invite.employee_id}::uuid
           returning public.employees.id
         ), invitation_update as (
           update public.workspace_invitations set status='accepted', accepted_at=now(), accepted_by=${input.authUserId}::uuid, updated_at=now()
