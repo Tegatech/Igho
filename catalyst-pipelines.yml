@@ -51,6 +51,7 @@ jobs:
         NEON_AUTH_BASE_URL='<< env.NEON_AUTH_BASE_URL >>'
         BOOTSTRAP_OWNER_EMAIL='<< env.BOOTSTRAP_OWNER_EMAIL >>'
         IGHO_PUBLIC_ORIGIN='<< env.IGHO_PUBLIC_ORIGIN >>'
+        PAYSTACK_SECRET_KEY='<< env.PAYSTACK_SECRET_KEY >>'
         PROJECT_ID='<< env.PROJECT_ID >>'
         CATALYST_ORG='<< env.CATALYST_ORG >>'
         node infrastructure/scripts/deploy-function.mjs
