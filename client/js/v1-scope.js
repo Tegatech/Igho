@@ -202,12 +202,20 @@
   window.hydrateEmployeeFromApi=function(employee){
     if(!employee)return;
     const mapped=apiEmployeeToState(employee);
-    const index=state.people.findIndex(p=>p.id===mapped.id);
-    if(index>=0)state.people[index]=mapped;
-    else state.people=[mapped];
+    state.people=[mapped];
     state.currentPerson=mapped.id;
     save();
     render();
+  };
+
+  window.showEmployeeProfileUnavailable=function(){
+    state.people=[];
+    state.currentPerson=null;
+    save();
+    const portal=document.getElementById('employeePortalContent');
+    if(portal){
+      portal.innerHTML='<div class="employee-page-eyebrow">Employee portal</div><h1 class="employee-page-title">Profile not linked</h1><p class="employee-page-sub">This signed-in account has employee access, but it is not linked to an employee payroll record yet.</p>';
+    }
   };
 
   render();
