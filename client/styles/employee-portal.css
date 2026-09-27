@@ -70,3 +70,29 @@
  .employee-slip button{grid-column:1/-1;width:100%}
  .employee-profile-row{grid-template-columns:1fr;gap:4px}
 }
+
+body.employee-mode .sidebar,
+body.employee-mode .topbar {
+  display: none;
+}
+
+body.employee-mode .main {
+  margin-left: 0;
+  min-height: 100vh;
+}
+
+body.employee-mode .page {
+  display: none;
+}
+
+body.employee-mode #employee.page.active {
+  display: block;
+}
+
+body.employee-mode .employee-admin-return {
+  display: none;
+}
+
+body.employee-mode .employee-portal-shell {
+  min-height: 100vh;
+}
