@@ -101,7 +101,7 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
           returning id
         ), audit as (
           insert into public.audit_events (workspace_id, actor_auth_user_id, action, resource_type, resource_id, outcome, request_id, metadata)
-          select ${input.workspaceId}::uuid, ${input.actorAuthUserId}::uuid, 'workspace.invitation.created', 'workspace_invitation', i.id, 'success', ${input.requestId}, jsonb_build_object('role', ${input.role})
+          select ${input.workspaceId}::uuid, ${input.actorAuthUserId}::uuid, 'workspace.invitation.created', 'workspace_invitation', i.id, 'success', ${input.requestId}, jsonb_build_object('role', ${input.role}::text)
           from invitation i
         )
         select id::text from invitation
