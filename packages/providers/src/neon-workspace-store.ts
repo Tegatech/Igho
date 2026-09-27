@@ -49,7 +49,6 @@ function mapEmployee(row: EmployeeRow) {
       accountName: row.account_name,
       verificationStatus: row.verification_status,
     },
-
   };
 }
 
@@ -317,6 +316,7 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
       const row = rows[0];
       return row ? mapEmployee(row) : null;
     },
+
     async saveVerifiedBankAccount(input: {
       workspaceId: string;
       employeeId: string;
