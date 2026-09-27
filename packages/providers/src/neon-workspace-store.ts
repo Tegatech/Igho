@@ -7,11 +7,49 @@ interface MembershipRow {
   workspace_id: string;
   role_key: RoleKey;
 }
+
 interface InvitationRow {
   id: string;
   workspace_id: string;
   email: string;
   role_id: string;
+  employee_id: string | null;
+}
+
+interface EmployeeRow {
+  id: string;
+  membership_id: string | null;
+  email: string;
+  full_name: string;
+  job_title: string;
+  monthly_pay_amount: string;
+  currency: string;
+  employment_start_date: string | null;
+  status: "invited" | "active" | "inactive";
+  bank_name: string | null;
+  account_number_last4: string | null;
+  account_name: string | null;
+  verification_status: "action_required" | "pending" | "verified" | "failed";
+}
+
+function mapEmployee(row: EmployeeRow) {
+  return {
+    id: row.id,
+    membershipId: row.membership_id,
+    email: row.email,
+    fullName: row.full_name,
+    jobTitle: row.job_title,
+    monthlyPayAmount: Number(row.monthly_pay_amount),
+    currency: row.currency,
+    employmentStartDate: row.employment_start_date,
+    status: row.status,
+    bankAccount: {
+      bankName: row.bank_name,
+      accountNumberLast4: row.account_number_last4,
+      accountName: row.account_name,
+      verificationStatus: row.verification_status,
+    },
+  };
 }
 
 export function createNeonWorkspaceStore(databaseUrl: string) {
@@ -89,10 +127,74 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
       email: string;
       role: Exclude<RoleKey, "OWNER">;
       requestId: string;
+      employee?: {
+        fullName: string;
+        jobTitle: string;
+        monthlyPayAmount: number;
+        currency: string;
+        employmentStartDate?: string | null;
+      };
     }): Promise<{ invitationId: string; token: string; expiresAt: string } | null> {
       const token = randomBytes(32).toString("base64url");
       const tokenHash = createHash("sha256").update(token).digest("hex");
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      if (input.role === "EMPLOYEE" && input.employee) {
+        const rows = (await sql`
+          with employee as (
+            insert into public.employees (
+              workspace_id, email, full_name, job_title, monthly_pay_amount, currency,
+              employment_start_date, status, created_by
+            )
+            values (
+              ${input.workspaceId}::uuid,
+              ${input.email},
+              ${input.employee.fullName},
+              ${input.employee.jobTitle},
+              ${input.employee.monthlyPayAmount},
+              ${input.employee.currency},
+              ${input.employee.employmentStartDate ?? null}::date,
+              'invited',
+              ${input.actorAuthUserId}::uuid
+            )
+            returning id
+          ), invitation as (
+            insert into public.workspace_invitations (
+              workspace_id, email, role_id, token_hash, invited_by, expires_at, employee_id
+            )
+            select
+              ${input.workspaceId}::uuid,
+              ${input.email},
+              r.id,
+              ${tokenHash},
+              ${input.actorAuthUserId}::uuid,
+              ${expiresAt}::timestamptz,
+              e.id
+            from public.roles r cross join employee e
+            where r.role_key = ${input.role}
+            returning id
+          ), audit as (
+            insert into public.audit_events (
+              workspace_id, actor_auth_user_id, action, resource_type, resource_id,
+              outcome, request_id, metadata
+            )
+            select
+              ${input.workspaceId}::uuid,
+              ${input.actorAuthUserId}::uuid,
+              'workspace.invitation.created',
+              'workspace_invitation',
+              i.id,
+              'success',
+              ${input.requestId},
+              jsonb_build_object('role', ${input.role}::text, 'employee', true)
+            from invitation i
+          )
+          select id::text from invitation
+        `) as { id: string }[];
+        const id = rows[0]?.id;
+        return id ? { invitationId: id, token, expiresAt } : null;
+      }
+
       const rows = (await sql`
         with invitation as (
           insert into public.workspace_invitations (workspace_id, email, role_id, token_hash, invited_by, expires_at)
@@ -119,7 +221,7 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
     }): Promise<{ workspaceId: string; membershipId: string } | null> {
       const tokenHash = createHash("sha256").update(input.token).digest("hex");
       const invites = (await sql`
-        select id::text, workspace_id::text, email, role_id::text
+        select id::text, workspace_id::text, email, role_id::text, employee_id::text
         from public.workspace_invitations
         where token_hash = ${tokenHash} and status = 'pending' and deleted_at is null and expires_at > now()
         limit 1
@@ -139,6 +241,12 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
         ), assignment as (
           insert into public.membership_role_assignments (membership_id, role_id, assigned_by)
           select m.id, ${invite.role_id}::uuid, ${input.authUserId}::uuid from membership m
+        ), employee_update as (
+          update public.employees
+          set membership_id = m.id, status = 'active', updated_at = now()
+          from membership m
+          where id = ${invite.employee_id}::uuid
+          returning public.employees.id
         ), invitation_update as (
           update public.workspace_invitations set status='accepted', accepted_at=now(), accepted_by=${input.authUserId}::uuid, updated_at=now()
           where id=${invite.id}::uuid
@@ -153,6 +261,60 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
       return accepted
         ? { workspaceId: accepted.workspace_id, membershipId: accepted.membership_id }
         : null;
+    },
+
+    async listEmployees(workspaceId: string) {
+      const rows = (await sql`
+        select
+          e.id::text,
+          e.membership_id::text,
+          e.email,
+          e.full_name,
+          e.job_title,
+          e.monthly_pay_amount::text,
+          e.currency,
+          e.employment_start_date::text,
+          e.status,
+          b.bank_name,
+          b.account_number_last4,
+          b.account_name,
+          coalesce(b.verification_status, 'action_required') as verification_status
+        from public.employees e
+        left join public.employee_bank_accounts b
+          on b.employee_id = e.id and b.deleted_at is null
+        where e.workspace_id = ${workspaceId}::uuid
+          and e.deleted_at is null
+        order by e.created_at desc
+      `) as EmployeeRow[];
+      return rows.map(mapEmployee);
+    },
+
+    async getEmployeeForMembership(input: { workspaceId: string; membershipId: string }) {
+      const rows = (await sql`
+        select
+          e.id::text,
+          e.membership_id::text,
+          e.email,
+          e.full_name,
+          e.job_title,
+          e.monthly_pay_amount::text,
+          e.currency,
+          e.employment_start_date::text,
+          e.status,
+          b.bank_name,
+          b.account_number_last4,
+          b.account_name,
+          coalesce(b.verification_status, 'action_required') as verification_status
+        from public.employees e
+        left join public.employee_bank_accounts b
+          on b.employee_id = e.id and b.deleted_at is null
+        where e.workspace_id = ${input.workspaceId}::uuid
+          and e.membership_id = ${input.membershipId}::uuid
+          and e.deleted_at is null
+        limit 1
+      `) as EmployeeRow[];
+      const row = rows[0];
+      return row ? mapEmployee(row) : null;
     },
   };
 }
