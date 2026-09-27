@@ -49,6 +49,57 @@ function mapEmployee(row: EmployeeRow) {
       accountName: row.account_name,
       verificationStatus: row.verification_status,
     },
+    async saveVerifiedBankAccount(input: {
+      workspaceId: string;
+      employeeId: string;
+      bankCode: string;
+      bankName: string;
+      accountNumberLast4: string;
+      accountName: string;
+      provider: string;
+      providerRecipientCode: string;
+    }) {
+      const rows = (await sql`
+        insert into public.employee_bank_accounts (
+          workspace_id,
+          employee_id,
+          bank_code,
+          bank_name,
+          account_number_last4,
+          account_name,
+          verification_status,
+          verification_provider,
+          provider_recipient_code,
+          verified_at
+        )
+        values (
+          ${input.workspaceId}::uuid,
+          ${input.employeeId}::uuid,
+          ${input.bankCode},
+          ${input.bankName},
+          ${input.accountNumberLast4},
+          ${input.accountName},
+          'verified',
+          ${input.provider},
+          ${input.providerRecipientCode},
+          now()
+        )
+        on conflict (employee_id) where deleted_at is null
+        do update set
+          bank_code = excluded.bank_code,
+          bank_name = excluded.bank_name,
+          account_number_last4 = excluded.account_number_last4,
+          account_name = excluded.account_name,
+          verification_status = 'verified',
+          verification_provider = excluded.verification_provider,
+          provider_recipient_code = excluded.provider_recipient_code,
+          verified_at = now(),
+          updated_at = now()
+        returning id::text
+      `) as { id: string }[];
+      return rows[0]?.id ?? null;
+    },
+
   };
 }
 
