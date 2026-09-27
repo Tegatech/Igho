@@ -41,6 +41,12 @@ export const ighoApi = {
   people: () => apiRequest("/people"),
   myProfile: () => apiRequest("/me/profile"),
   myBankAccount: () => apiRequest("/me/bank-account"),
+  banks: () => apiRequest("/banks"),
+  saveMyBankAccount: (bankCode, accountNumber) =>
+    apiRequest("/me/bank-account", {
+      method: "PUT",
+      body: JSON.stringify({ bank_code: bankCode, account_number: accountNumber }),
+    }),
   createInvitation: (email, role, employee) =>
     apiRequest("/workspace-invitations", {
       method: "POST",
