@@ -374,7 +374,7 @@ app.post(
       email,
       role: role as Exclude<RoleKey, "OWNER">,
       requestId: id,
-      employee,
+      ...(employee ? { employee } : {}),
     });
 
     if (!invitation) {
