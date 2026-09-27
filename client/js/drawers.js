@@ -55,6 +55,8 @@ async function submitPersonInvitation(){
 
     const inviteUrl=new URL("auth.html",window.location.href);
     inviteUrl.searchParams.set("invite",token);
+    inviteUrl.searchParams.set("name",name);
+    inviteUrl.searchParams.set("email",email);
     inviteUrl.searchParams.set("return","index.html?live=1");
 
     const id=`EMP-${String(24+state.people.length).padStart(5,"0")}`;
