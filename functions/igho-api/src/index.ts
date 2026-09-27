@@ -1,13 +1,19 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import { requirePermission, type AccessContext, type RoleKey } from "@igho/core";
-import { createNeonWorkspaceStore, createPaystackBankProvider, PaystackProviderError } from "@igho/providers";
+import {
+  createNeonWorkspaceStore,
+  createPaystackBankProvider,
+  PaystackProviderError,
+} from "@igho/providers";
 import { createNeonJwtVerifier, type AuthenticatedIdentity } from "./auth/neon-jwt.js";
 import { readEnvironment } from "./env.js";
 import { fail, ok, requestId } from "./http.js";
 
 const env = readEnvironment();
 const workspaceStore = createNeonWorkspaceStore(env.databaseUrl);
-const bankProvider = env.paystackSecretKey ? createPaystackBankProvider(env.paystackSecretKey) : null;
+const bankProvider = env.paystackSecretKey
+  ? createPaystackBankProvider(env.paystackSecretKey)
+  : null;
 const verifyBearer = createNeonJwtVerifier(env.neonAuthBaseUrl);
 const app = express();
 
@@ -269,7 +275,13 @@ app.get(
   requireWorkspaceAccess,
   async (_req: AuthenticatedRequest, res) => {
     if (!bankProvider) {
-      fail(res, "provider", 503, "PROVIDER_001", "Bank verification provider is not configured");
+      fail(
+        res,
+        "provider",
+        503,
+        "PROVIDER_001",
+        "Bank verification provider is not configured",
+      );
       return;
     }
 
@@ -304,7 +316,13 @@ app.put(
     }
 
     if (!bankProvider) {
-      fail(res, id, 503, "PROVIDER_001", "Bank verification provider is not configured");
+      fail(
+        res,
+        id,
+        503,
+        "PROVIDER_001",
+        "Bank verification provider is not configured",
+      );
       return;
     }
 
