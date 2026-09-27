@@ -8,11 +8,15 @@ const sessionMessage = document.getElementById("sessionMessage");
 const params = new URLSearchParams(window.location.search);
 const returnTo = params.get("return") || "index.html?live=1";
 const inviteToken = params.get("invite");
+const inviteName = params.get("name") || "";
+const inviteEmail = (params.get("email") || "").trim().toLowerCase();
 let inviteAccepted = false;
 
 document.querySelectorAll("[data-mode]").forEach((button) => {
   button.addEventListener("click", () => switchMode(button.dataset.mode));
 });
+
+setupInviteExperience();
 
 document.getElementById("signinForm").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -59,6 +63,30 @@ document.getElementById("signoutBtn").addEventListener("click", async () => {
 });
 
 renderSession().catch((error) => setMessage(authMessage, error.message, true));
+
+function setupInviteExperience() {
+  if (!inviteToken) return;
+
+  const context = document.getElementById("inviteContext");
+  context.hidden = false;
+  document.getElementById("inviteContextName").textContent = inviteName || "The24thGroup employee";
+  document.getElementById("inviteContextEmail").textContent = inviteEmail;
+  document.getElementById("authTitle").textContent = "Join The24thGroup";
+  document.getElementById("authSubtitle").textContent = "Your invitation is ready. Create an Igho account or sign in to continue.";
+
+  if (inviteName) document.getElementById("signupName").value = inviteName;
+  if (inviteEmail) {
+    document.getElementById("signupEmail").value = inviteEmail;
+    document.getElementById("signinEmail").value = inviteEmail;
+  }
+
+  ["signupName", "signupEmail", "signinEmail"].forEach((id) => {
+    const input = document.getElementById(id);
+    if (input?.closest("label")) input.closest("label").hidden = true;
+  });
+
+  switchMode("signup");
+}
 
 function switchMode(mode) {
   const signUpMode = mode === "signup";
