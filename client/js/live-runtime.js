@@ -24,7 +24,11 @@ async function initialiseLiveMode() {
 
   const me = await ighoApi.me();
   const data = me.data;
+  const roles = Array.isArray(data.roles) ? data.roles : [];
 
+  if (roles.includes("EMPLOYEE")) {
+    document.body.classList.add("employee-mode");
+  }
 
   const card = document.querySelector(".sidebar-foot .user-card");
   if (card) {
@@ -100,9 +104,15 @@ async function hydrateLivePeople(me) {
     try {
       const response = await ighoApi.myProfile();
       window.hydrateEmployeeFromApi?.(response?.data);
-      window.goPage?.("employee");
+      window.goPage("employee");
+      window.renderEmployeePortal?.();
     } catch (error) {
-      if (error?.code !== "PEOPLE_004") throw error;
+      if (error?.code === "PEOPLE_004") {
+        window.showEmployeeProfileUnavailable?.();
+        window.goPage("employee");
+        return;
+      }
+      throw error;
     }
   }
 }
@@ -111,7 +121,9 @@ async function waitForClientHydration() {
   for (let attempt = 0; attempt < 50; attempt += 1) {
     if (
       typeof window.hydratePeopleFromApi === "function" &&
-      typeof window.hydrateEmployeeFromApi === "function"
+      typeof window.hydrateEmployeeFromApi === "function" &&
+      typeof window.goPage === "function" &&
+      typeof window.renderEmployeePortal === "function"
     ) {
       return;
     }
