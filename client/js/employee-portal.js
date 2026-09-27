@@ -7,13 +7,13 @@
   function adjTotal(p){return (p.adjustments||[]).reduce((s,a)=>s+a.amount,0)}
   function empNet(p){return p.pay+adjTotal(p)}
   function slipsFor(p){return state.payslips.filter(s=>s.employeeId===p.id||s.person===p.name)}
-  function currentEmployee(){return state.people.find(p=>p.id===state.currentPerson)||state.people[0]}
+  function currentEmployee(){return state.people.find(p=>p.id===state.currentPerson)||state.people[0]||null}
 
   portalPage.innerHTML=`
     <div class="employee-portal-shell">
       <header class="employee-portal-top">
         <div class="employee-brand"><img src="assets/igho-icon.svg" alt="" class="employee-brand-mark"><img src="assets/igho-wordmark.png" alt="Igho" class="employee-brand-wordmark"><small>Employee portal</small></div>
-        <div class="employee-top-actions"><div class="employee-top-user" id="employeeTopUser"></div><button class="btn secondary" onclick="goPage('people')">Back to payroll</button></div>
+        <div class="employee-top-actions"><div class="employee-top-user" id="employeeTopUser"></div><button class="btn secondary employee-admin-return" onclick="goPage('people')">Back to payroll</button></div>
       </header>
       <div class="employee-portal-layout">
         <aside class="employee-portal-nav" id="employeePortalNav"></aside>
@@ -54,6 +54,13 @@
 
   window.renderEmployeePortal=function(){
     const p=currentEmployee();
+    if(!p){
+      document.getElementById('employeeTopUser').innerHTML='';
+      document.getElementById('employeePortalNav').innerHTML='';
+      document.getElementById('employeeMobileTabs').innerHTML='';
+      document.getElementById('employeePortalContent').innerHTML='<div class="employee-page-eyebrow">Employee portal</div><h1 class="employee-page-title">Profile not linked</h1><p class="employee-page-sub">This account is signed in, but no employee payroll record is linked to it yet.</p>';
+      return;
+    }
     document.getElementById('employeeTopUser').innerHTML=`<strong>${p.name}</strong><span>${p.id}</span>`;
     renderNav();
     const content=document.getElementById('employeePortalContent');
