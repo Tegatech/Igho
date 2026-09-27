@@ -49,7 +49,7 @@ async function submitPersonInvitation(){
       throw new Error("Live workspace connection is required to create an invitation.");
     }
 
-    const result=await window.IghoLive.api.createInvitation(email,"EMPLOYEE");
+    const result=await window.IghoLive.api.createInvitation(email,"EMPLOYEE",{full_name:name,job_title:role,monthly_pay_amount:pay,currency:"NGN",employment_start_date:null});
     const token=result?.data?.activation_token;
     if(!token) throw new Error("Igho did not return an invitation token.");
 
