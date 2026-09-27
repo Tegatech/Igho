@@ -7,7 +7,7 @@
   function adjTotal(p){return (p.adjustments||[]).reduce((s,a)=>s+a.amount,0)}
   function empNet(p){return p.pay+adjTotal(p)}
   function slipsFor(p){return state.payslips.filter(s=>s.employeeId===p.id||s.person===p.name)}
-  function currentEmployee(){return state.people.find(p=>p.id===state.currentPerson)||state.people[0]||null}
+  function currentEmployee(){return state.people.find(p=>p.id===state.currentPerson)||null}
 
   portalPage.innerHTML=`
     <div class="employee-portal-shell">
@@ -73,7 +73,11 @@
   if(topActions && !document.getElementById('employeePortalLink')){
     const button=document.createElement('button');
     button.id='employeePortalLink';button.className='btn secondary';button.textContent='Employee portal';
-    button.onclick=()=>{state.currentPerson=state.people[0]?.id;save();goPage('employee')};
+    button.onclick=()=>{
+      const selected=currentEmployee();
+      if(!selected){toast('Choose an employee','Open People and select an employee to preview their portal.');goPage('people');return}
+      goPage('employee');
+    };
     topActions.insertBefore(button,topActions.firstChild);
   }
 
