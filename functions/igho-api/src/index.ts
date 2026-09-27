@@ -1,12 +1,13 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import { requirePermission, type AccessContext, type RoleKey } from "@igho/core";
-import { createNeonWorkspaceStore } from "@igho/providers";
+import { createNeonWorkspaceStore, createPaystackBankProvider, PaystackProviderError } from "@igho/providers";
 import { createNeonJwtVerifier, type AuthenticatedIdentity } from "./auth/neon-jwt.js";
 import { readEnvironment } from "./env.js";
 import { fail, ok, requestId } from "./http.js";
 
 const env = readEnvironment();
 const workspaceStore = createNeonWorkspaceStore(env.databaseUrl);
+const bankProvider = env.paystackSecretKey ? createPaystackBankProvider(env.paystackSecretKey) : null;
 const verifyBearer = createNeonJwtVerifier(env.neonAuthBaseUrl);
 const app = express();
 
@@ -259,6 +260,126 @@ app.get(
 
     const employees = await workspaceStore.listEmployees(access.workspaceId);
     ok(res, id, { items: employees });
+  },
+);
+
+app.get(
+  "/api/v1/banks",
+  authenticate,
+  requireWorkspaceAccess,
+  async (_req: AuthenticatedRequest, res) => {
+    if (!bankProvider) {
+      fail(res, "provider", 503, "PROVIDER_001", "Bank verification provider is not configured");
+      return;
+    }
+
+    try {
+      const banks = await bankProvider.listBanks();
+      ok(res, "banks", { items: banks });
+    } catch (error) {
+      const message =
+        error instanceof PaystackProviderError ? error.message : "Could not load banks";
+      fail(res, "provider", 502, "PROVIDER_002", message);
+    }
+  },
+);
+
+app.put(
+  "/api/v1/me/bank-account",
+  authenticate,
+  requireWorkspaceAccess,
+  async (req: AuthenticatedRequest, res) => {
+    const id = requestId(req);
+    const access = req.ighoAccess;
+    if (!access) {
+      fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
+      return;
+    }
+
+    try {
+      requirePermission(access, "bank_accounts.edit");
+    } catch {
+      fail(res, id, 403, "AUTH_004", "Permission denied");
+      return;
+    }
+
+    if (!bankProvider) {
+      fail(res, id, 503, "PROVIDER_001", "Bank verification provider is not configured");
+      return;
+    }
+
+    const body = req.body as { bank_code?: unknown; account_number?: unknown };
+    const bankCode = typeof body.bank_code === "string" ? body.bank_code.trim() : "";
+    const accountNumber =
+      typeof body.account_number === "string" ? body.account_number.trim() : "";
+
+    if (!bankCode || !/^\d{10}$/.test(accountNumber)) {
+      fail(res, id, 422, "BANK_001", "A valid bank and 10-digit account number are required");
+      return;
+    }
+
+    const employee = await workspaceStore.getEmployeeForMembership({
+      workspaceId: access.workspaceId,
+      membershipId: access.membershipId,
+    });
+
+    if (!employee) {
+      fail(res, id, 404, "PEOPLE_004", "No employee record is linked to this account");
+      return;
+    }
+
+    try {
+      const banks = await bankProvider.listBanks();
+      const bank = banks.find((item) => item.code === bankCode);
+      if (!bank) {
+        fail(res, id, 422, "BANK_002", "The selected bank is not available");
+        return;
+      }
+
+      const resolved = await bankProvider.resolveBankAccount({
+        accountNumber,
+        bankCode,
+      });
+
+      const recipient = await bankProvider.createRecipient({
+        name: resolved.accountName,
+        accountNumber,
+        bankCode,
+        currency: employee.currency,
+      });
+
+      const bankAccountId = await workspaceStore.saveVerifiedBankAccount({
+        workspaceId: access.workspaceId,
+        employeeId: employee.id,
+        bankCode,
+        bankName: bank.name,
+        accountNumberLast4: accountNumber.slice(-4),
+        accountName: resolved.accountName,
+        provider: "paystack",
+        providerRecipientCode: recipient.recipientCode,
+      });
+
+      if (!bankAccountId) {
+        fail(res, id, 500, "BANK_003", "Could not save the verified bank account");
+        return;
+      }
+
+      ok(res, id, {
+        employee_id: employee.id,
+        bank_account: {
+          bank_name: bank.name,
+          account_number_last4: accountNumber.slice(-4),
+          account_name: resolved.accountName,
+          verification_status: "verified",
+        },
+      });
+    } catch (error) {
+      const message =
+        error instanceof PaystackProviderError
+          ? error.message
+          : "Could not verify this bank account";
+      fail(res, id, 422, "BANK_004", message);
+    }
   },
 );
 
