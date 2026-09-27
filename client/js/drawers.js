@@ -9,4 +9,74 @@ function openPayment(id){const p=state.payments.find(x=>x.id===id);openDrawer(p.
 function previewPayslip(id){const s=state.payslips.find(x=>x.id===id);openDrawer(`${s.person} · ${s.period}`,"Payslip",`<div class="eyebrow">The24thGroup</div><h2 class="document-title">Payslip</h2><div class="kv"><span>Employee</span><strong>${s.person}</strong></div><div class="kv"><span>Net pay</span><strong>${money(s.amount)}</strong></div><div class="kv"><span>Period</span><strong>${s.period}</strong></div><div class="kv"><span>Status</span>${status(s.status)}</div>`,`<div class="mini-item"><strong>Generated</strong><small>${s.date}</small></div>`,`<div class="mini-item"><strong>${s.id}</strong><small>Document reference</small></div>`,"Download PDF",()=>toast("Payslip ready","Payslip export is not enabled yet."))}
 function startBankUpdate(id){const p=state.people.find(x=>x.id===id);state.currentPerson=id;document.getElementById("resolvedName").value=p.name;document.getElementById("accountNumber").value=p.account?("000000"+p.account).slice(-10):"";closeDrawer();openModal("bankModal")}
 document.getElementById("bankConfirm").onclick=()=>{const p=state.people.find(x=>x.id===state.currentPerson),acct=document.getElementById("accountNumber").value.trim();if(!/^\d{10}$/.test(acct)){toast("Check account number","Enter a valid 10-digit account number.");return}p.bank=document.getElementById("bankName").value;p.account=acct.slice(-4);p.bankStatus="Verified";log("Bank account verified",`${p.id} · ${p.name}`,"System","Bank account");save();closeModal("bankModal");render();toast("Bank account verified",`${p.name} is now ready for payroll.`)}
-document.getElementById("addPersonConfirm").onclick=()=>{const name=document.getElementById("newName").value.trim(),email=document.getElementById("newEmail").value.trim(),role=document.getElementById("newRole").value.trim(),pay=parseInt(document.getElementById("newPay").value.replace(/\D/g,""),10);if(!name||!email||!role||!pay){toast("Complete all fields","Name, email, role and monthly pay are required.");return}const id=`EMP-${String(24+state.people.length).padStart(5,"0")}`;state.people.unshift({id,name,email,role,pay,bank:"",account:"",bankStatus:"Action required",status:"Active",lastPaid:"—",included:true});log("Employee invited",`${id} · ${name}`,"Johannes Oghoro","Employee");save();closeModal("personModal");["newName","newEmail","newRole","newPay"].forEach(x=>document.getElementById(x).value="");render();toast("Invite sent",`${name} was added and needs to add bank details.`)}
+window.preparePersonModal=function(){
+  document.getElementById("personModalTitle").textContent="Add person";
+  document.getElementById("personInviteFields").hidden=false;
+  document.getElementById("inviteResult").hidden=true;
+  ["newName","newEmail","newRole","newPay"].forEach((id)=>{const el=document.getElementById(id);if(el)el.value=""});
+  const button=document.getElementById("addPersonConfirm");
+  button.disabled=false;
+  button.textContent="Add & invite";
+  button.onclick=submitPersonInvitation;
+};
+
+async function copyInviteLink(){
+  const input=document.getElementById("inviteLink");
+  try{
+    await navigator.clipboard.writeText(input.value);
+    toast("Invite link copied","Open it in another browser or device to test employee acceptance.");
+  }catch{
+    input.focus();
+    input.select();
+    toast("Copy the invite link","The secure invitation link is selected.");
+  }
+}
+document.getElementById("copyInviteLink").onclick=copyInviteLink;
+
+async function submitPersonInvitation(){
+  const name=document.getElementById("newName").value.trim();
+  const email=document.getElementById("newEmail").value.trim().toLowerCase();
+  const role=document.getElementById("newRole").value.trim();
+  const pay=parseInt(document.getElementById("newPay").value.replace(/\D/g,""),10);
+  if(!name||!email||!role||!pay){toast("Complete all fields","Name, email, role and monthly pay are required.");return}
+
+  const button=document.getElementById("addPersonConfirm");
+  button.disabled=true;
+  button.textContent="Creating invite…";
+
+  try{
+    if(!window.IghoLive?.api){
+      throw new Error("Live workspace connection is required to create an invitation.");
+    }
+
+    const result=await window.IghoLive.api.createInvitation(email,"EMPLOYEE");
+    const token=result?.data?.activation_token;
+    if(!token) throw new Error("Igho did not return an invitation token.");
+
+    const inviteUrl=new URL("auth.html",window.location.href);
+    inviteUrl.searchParams.set("invite",token);
+    inviteUrl.searchParams.set("return","index.html?live=1");
+
+    const id=`EMP-${String(24+state.people.length).padStart(5,"0")}`;
+    if(!state.people.some((person)=>person.email.toLowerCase()===email)){
+      state.people.unshift({id,name,email,role,pay,bank:"",account:"",bankStatus:"Action required",status:"Active",lastPaid:"—",included:true});
+      log("Employee invited",`${id} · ${name}`,"Johannes Oghoro","Employee");
+      save();
+      render();
+    }
+
+    document.getElementById("personInviteFields").hidden=true;
+    document.getElementById("inviteResult").hidden=false;
+    document.getElementById("inviteLink").value=inviteUrl.toString();
+    document.getElementById("personModalTitle").textContent="Invitation ready";
+    button.disabled=false;
+    button.textContent="Done";
+    button.onclick=()=>closeModal("personModal");
+    toast("Invitation created",`${name} can now join The24thGroup.`);
+  }catch(error){
+    button.disabled=false;
+    button.textContent="Add & invite";
+    toast("Invitation failed",error?.message||"Could not create the employee invitation.");
+  }
+}
+document.getElementById("addPersonConfirm").onclick=submitPersonInvitation;
