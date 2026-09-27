@@ -1,0 +1,29 @@
+name: Format Debug
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+
+      - name: Show Prettier diff
+        run: |
+          npx prettier --write functions/igho-api/src/index.ts packages/providers/src/neon-workspace-store.ts
+          git diff -- functions/igho-api/src/index.ts packages/providers/src/neon-workspace-store.ts
