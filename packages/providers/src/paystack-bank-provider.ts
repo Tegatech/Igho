@@ -27,19 +27,19 @@ export class PaystackProviderError extends Error {
 
 export function createPaystackBankProvider(secretKey: string) {
   const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
+    const headers = new Headers(init?.headers);
+    headers.set("Authorization", `Bearer ${secretKey}`);
+    headers.set("Accept", "application/json");
+    headers.set("Content-Type", "application/json");
+
     const response = await fetch(`https://api.paystack.co${path}`, {
       ...init,
-      headers: {
-        Authorization: `Bearer ${secretKey}`,
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        ...(init?.headers || {}),
-      },
+      headers,
     });
 
     const payload = (await response.json().catch(() => null)) as PaystackEnvelope<T> | null;
     if (!response.ok || !payload?.status) {
-      throw new PaystackProviderError(payload?.message || "Paystack request failed");
+      throw new PaystackProviderError(payload?.message ?? "Paystack request failed");
     }
     return payload.data;
   };
@@ -47,7 +47,7 @@ export function createPaystackBankProvider(secretKey: string) {
   return {
     async listBanks(): Promise<BankOption[]> {
       const banks = await request<
-        Array<{ code: string; name: string; active?: boolean; currency?: string }>
+        { code: string; name: string; active?: boolean; currency?: string }[]
       >("/bank?country=nigeria&currency=NGN");
       return banks
         .filter((bank) => bank.active !== false)
@@ -85,7 +85,7 @@ export function createPaystackBankProvider(secretKey: string) {
           name: input.name,
           account_number: input.accountNumber,
           bank_code: input.bankCode,
-          currency: input.currency || "NGN",
+          currency: input.currency ?? "NGN",
         }),
       });
       return { recipientCode: data.recipient_code };
