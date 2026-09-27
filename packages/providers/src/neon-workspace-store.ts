@@ -221,13 +221,19 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
     }): Promise<{ workspaceId: string; membershipId: string } | null> {
       const tokenHash = createHash("sha256").update(input.token).digest("hex");
       const invites = (await sql`
-        select id::text, workspace_id::text, email, role_id::text, employee_id::text
-        from public.workspace_invitations
-        where token_hash = ${tokenHash} and status = 'pending' and deleted_at is null and expires_at > now()
+        select wi.id::text, wi.workspace_id::text, wi.email, wi.role_id::text, wi.employee_id::text
+        from public.workspace_invitations wi
+        join neon_auth."user" u
+          on u.id = ${input.authUserId}::uuid
+         and lower(u.email) = lower(wi.email)
+        where wi.token_hash = ${tokenHash}
+          and wi.status = 'pending'
+          and wi.deleted_at is null
+          and wi.expires_at > now()
         limit 1
       `) as InvitationRow[];
       const invite = invites[0];
-      if (!invite || invite.email.toLowerCase() !== input.email.toLowerCase()) return null;
+      if (!invite) return null;
 
       const rows = (await sql`
         with profile as (
