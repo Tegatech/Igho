@@ -49,6 +49,11 @@ document.getElementById("bootstrapBtn").addEventListener("click", async () => {
 });
 
 document.getElementById("continueBtn").addEventListener("click", async () => {
+  if (inviteToken && !inviteAccepted) {
+    await acceptInvitationIfNeeded();
+    return;
+  }
+
   await performSession(async () => {
     await ighoApi.me();
     window.location.assign(returnTo);
@@ -151,6 +156,7 @@ async function acceptInvitationIfNeeded() {
     if (!(error instanceof IghoApiError && error.code === "INVITE_004")) {
       sessionMessage.classList.add("error");
       sessionMessage.textContent = error?.message || "Could not accept this invitation.";
+      document.getElementById("continueBtn").textContent = "Retry joining Igho";
       return;
     }
 
@@ -162,6 +168,7 @@ async function acceptInvitationIfNeeded() {
       sessionMessage.classList.add("error");
       sessionMessage.textContent =
         "This invitation is invalid, expired, or belongs to another email address.";
+      document.getElementById("continueBtn").textContent = "Retry joining Igho";
       return;
     }
   }
@@ -171,6 +178,8 @@ async function acceptInvitationIfNeeded() {
   sessionMessage.textContent = roles.length
     ? `Joined The24thGroup. Role: ${roles.join(", ")}.`
     : "Joined The24thGroup.";
+
+  window.location.replace(returnTo);
 }
 
 async function perform(action) {
