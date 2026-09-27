@@ -53,3 +53,10 @@ button,input,select{font:inherit}button{cursor:pointer}a{color:inherit;text-deco
 .filter-clear{display:none}
 .select-col{width:38px}
 .employee-action-gap{margin-top:16px}
+
+.invite-result{display:grid;gap:10px;padding:14px;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper)}
+.invite-result strong{font-size:var(--text-md);font-weight:var(--weight-semibold)}
+.invite-result p{margin:0;color:var(--muted);font-size:var(--text-xs);line-height:1.5}
+.invite-link-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.invite-link-row input{min-width:0;height:40px;border:1px solid var(--line2);border-radius:var(--radius-sm);padding:0 10px;background:var(--white);font-size:var(--text-xs);color:var(--text)}
+@media(max-width:520px){.invite-link-row{grid-template-columns:1fr}.invite-link-row .btn{width:100%}}
