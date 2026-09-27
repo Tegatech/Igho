@@ -275,13 +275,7 @@ app.get(
   requireWorkspaceAccess,
   async (_req: AuthenticatedRequest, res) => {
     if (!bankProvider) {
-      fail(
-        res,
-        "provider",
-        503,
-        "PROVIDER_001",
-        "Bank verification provider is not configured",
-      );
+      fail(res, "provider", 503, "PROVIDER_001", "Bank verification provider is not configured");
       return;
     }
 
@@ -316,20 +310,13 @@ app.put(
     }
 
     if (!bankProvider) {
-      fail(
-        res,
-        id,
-        503,
-        "PROVIDER_001",
-        "Bank verification provider is not configured",
-      );
+      fail(res, id, 503, "PROVIDER_001", "Bank verification provider is not configured");
       return;
     }
 
     const body = req.body as { bank_code?: unknown; account_number?: unknown };
     const bankCode = typeof body.bank_code === "string" ? body.bank_code.trim() : "";
-    const accountNumber =
-      typeof body.account_number === "string" ? body.account_number.trim() : "";
+    const accountNumber = typeof body.account_number === "string" ? body.account_number.trim() : "";
 
     if (!bankCode || !/^\d{10}$/.test(accountNumber)) {
       fail(res, id, 422, "BANK_001", "A valid bank and 10-digit account number are required");
