@@ -46,6 +46,8 @@ async function initialiseLiveMode() {
       window.location.replace("auth.html");
     },
   });
+
+  await hydrateLivePeople(data);
 }
 
 function initials(email) {
@@ -80,5 +82,39 @@ function showRuntimeError(error) {
     if (title) title.textContent = "Connection issue";
     if (text) text.textContent = message;
     toast.classList.add("show");
+  }
+}
+
+
+async function hydrateLivePeople(me) {
+  await waitForClientHydration();
+
+  const roles = Array.isArray(me.roles) ? me.roles : [];
+  if (roles.includes("OWNER") || roles.includes("PAYROLL_ADMIN")) {
+    const response = await ighoApi.people();
+    window.hydratePeopleFromApi?.(response?.data?.items || []);
+    return;
+  }
+
+  if (roles.includes("EMPLOYEE")) {
+    try {
+      const response = await ighoApi.myProfile();
+      window.hydrateEmployeeFromApi?.(response?.data);
+      window.goPage?.("employee");
+    } catch (error) {
+      if (error?.code !== "PEOPLE_004") throw error;
+    }
+  }
+}
+
+async function waitForClientHydration() {
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    if (
+      typeof window.hydratePeopleFromApi === "function" &&
+      typeof window.hydrateEmployeeFromApi === "function"
+    ) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
   }
 }
