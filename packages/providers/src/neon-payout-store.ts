@@ -289,8 +289,7 @@ export function createNeonPayoutStore(databaseUrl: string) {
       providerPayload?: unknown;
       actorAuthUserId: string;
     }) {
-      const payload =
-        input.providerPayload == null ? null : JSON.stringify(input.providerPayload);
+      const payload = input.providerPayload == null ? null : JSON.stringify(input.providerPayload);
       const providerStatus = input.providerStatus.toLowerCase();
       const status: PayoutStatus =
         providerStatus === "success"
@@ -346,18 +345,14 @@ export function createNeonPayoutStore(databaseUrl: string) {
 
       const target = targetRows[0];
       if (!target) return { found: false, valid: false };
-      if (
-        input.amountMinor != null &&
-        Number(target.amount) !== input.amountMinor / 100
-      ) {
+      if (input.amountMinor != null && Number(target.amount) !== input.amountMinor / 100) {
         return { found: true, valid: false };
       }
       if (input.currency && target.currency !== input.currency) {
         return { found: true, valid: false };
       }
 
-      const payload =
-        input.providerPayload == null ? null : JSON.stringify(input.providerPayload);
+      const payload = input.providerPayload == null ? null : JSON.stringify(input.providerPayload);
       await sql`
         update public.payroll_payouts
         set
