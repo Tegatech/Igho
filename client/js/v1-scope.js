@@ -63,7 +63,14 @@
   function formatApiDate(value){if(!value)return '—';const d=new Date(value+'T00:00:00Z');return new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(d)}
   function formatPeriod(year,month){return new Intl.DateTimeFormat('en-GB',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(Date.UTC(year,month-1,1)))}
   function titleStatus(value){return String(value||'').toLowerCase().replace(/_/g,' ').replace(/\b\w/g,m=>m.toUpperCase())}
-  function apiRunToState(run){return {id:run.id,period:formatPeriod(run.periodYear,run.periodMonth),date:formatApiDate(run.payDate),prepareDate:formatApiDate(run.preparationDate),cutoffDate:formatApiDate(run.cutoffDate),people:run.includedCount,net:Number(run.totalNetPay||0),funding:'Not funded',approval:'Pending',status:titleStatus(run.status),rawStatus:run.status,payDateRaw:run.payDate,cutoffDateRaw:run.cutoffDate}}
+  function fundingLabel(rawStatus){
+    if(['FUNDED','AWAITING_APPROVAL','APPROVED','PROCESSING','PARTIALLY_PAID','SETTLED'].includes(rawStatus))return 'Funded';
+    if(['AWAITING_FUNDING','FUNDING_PENDING'].includes(rawStatus))return 'Pending';
+    if(rawStatus==='FAILED')return 'Failed';
+    return 'Not funded';
+  }
+  function approvalLabel(rawStatus){return ['APPROVED','PROCESSING','PARTIALLY_PAID','SETTLED'].includes(rawStatus)?'Approved':'Pending'}
+  function apiRunToState(run){return {id:run.id,period:formatPeriod(run.periodYear,run.periodMonth),date:formatApiDate(run.payDate),prepareDate:formatApiDate(run.preparationDate),cutoffDate:formatApiDate(run.cutoffDate),people:run.includedCount,net:Number(run.totalNetPay||0),funding:fundingLabel(run.status),approval:approvalLabel(run.status),status:titleStatus(run.status),rawStatus:run.status,payDateRaw:run.payDate,cutoffDateRaw:run.cutoffDate,fundingAttempt:run.funding||null}}
   function runEditable(run=currentRun()){if(!run||!run.cutoffDateRaw)return true;const today=new Date();const todayKey=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;return ['DRAFT','READY'].includes(run.rawStatus)&&todayKey<=run.cutoffDateRaw}
 
 
@@ -94,7 +101,9 @@
     const primary=document.getElementById('overviewPrimary');
     primary.disabled=false;
     if(issueList.length){primary.textContent=`Review ${issueList.length} issue`;primary.className='btn primary';primary.onclick=()=>goPage('people')}
-    else if(liveAdminMode()){primary.textContent=run.rawStatus==='READY'?'Ready for funding':'Review payroll';primary.className='btn secondary';primary.onclick=()=>goPage('payrollrun')}
+    else if(liveAdminMode()&&['READY','AWAITING_FUNDING','FUNDING_PENDING'].includes(run.rawStatus)){primary.textContent=run.rawStatus==='READY'?'Fund payroll':'Continue funding';primary.className='btn financial';primary.onclick=startFunding}
+    else if(liveAdminMode()&&run.rawStatus==='FUNDED'){primary.textContent='Ready for approval';primary.className='btn secondary';primary.onclick=()=>goPage('payrollrun')}
+    else if(liveAdminMode()){primary.textContent='Review payroll';primary.className='btn secondary';primary.onclick=()=>goPage('payrollrun')}
     else if(run.funding!=="Funded"){primary.textContent='Fund payroll';primary.className='btn financial';primary.onclick=startFunding}
     else if(run.approval!=="Approved"){primary.textContent='Approve payroll';primary.className='btn financial';primary.onclick=startApproval}
     else if(run.status==='Approved'){primary.textContent=`Pay ${all} people · ${money(total)}`;primary.className='btn financial';primary.onclick=processPayroll}
@@ -162,8 +171,8 @@
       const card=document.createElement('div');card.className='mobile-record';card.onclick=()=>openPerson(p.id);card.innerHTML=`<h4>${p.name}</h4><p>${p.role}</p><div class="mobile-record-grid"><div><span>Base pay</span><strong>${money(p.pay)}</strong></div><div><span>Adjustments</span><strong>${adj?money(adj):'None'}</strong></div><div><span>Net pay</span><strong>${money(net)}</strong></div><div><span>Payroll check</span><strong>${readiness}</strong></div></div><div class="mobile-record-foot"><button class="btn ghost" ${!editable||!p.included?'disabled':''} onclick="event.stopPropagation();openAdjustment('${p.id}')">Add adjustment</button><button class="btn ghost" ${!editable?'disabled':''} onclick="event.stopPropagation();toggleInclude('${p.id}')">${p.included?'Exclude':'Include'}</button></div>`;mob.appendChild(card);
     });
     document.getElementById('runIssueCount').textContent=`${issue.length} issue${issue.length===1?'':'s'}`;document.getElementById('runIssues').innerHTML=issue.length?issue.map(p=>`<div class="exception-row"><div><strong>${p.name}</strong><small>${p.readinessReason||p.bankStatus}</small></div><button class="btn ghost" onclick="openPerson('${p.id}')">Review</button></div>`).join(''):`<div class="exception-row"><div><strong>All included employees are ready</strong><small>No payment details need attention.</small></div></div>`;
-    document.getElementById('runStateLabel').textContent=run.status.toUpperCase();document.getElementById('runSummary').innerHTML=`<div class="kv"><span>Prepared</span><strong>${run.prepareDate}</strong></div><div class="kv"><span>Changes allowed until</span><strong>${run.cutoffDate}</strong></div><div class="kv"><span>Pay date</span><strong>${run.date}</strong></div><div class="kv"><span>Employees included</span><strong>${all.length}</strong></div><div class="kv"><span>Net payroll</span><strong>${money(total)}</strong></div><div class="kv"><span>Funding</span>${status(run.funding)}</div><div class="kv"><span>Approval</span>${status(run.approval)}</div><div class="scope-note"><strong>${editable?'Changes':'Changes closed'}:</strong> ${editable?`You can update this payroll until ${run.cutoffDate}.`:`This payroll can no longer be changed. New changes will apply to a later payroll.`}</div>`;
-    const btn=document.getElementById('runPrimary');btn.disabled=false;if(issue.length){btn.textContent='Review employees';btn.className='btn primary';btn.onclick=()=>goPage('people')}else if(liveAdminMode()){btn.textContent=run.rawStatus==='READY'?'Ready to fund':'Payroll needs attention';btn.className='btn secondary';btn.disabled=true;btn.onclick=null}else if(run.funding!=='Funded'){btn.textContent='Fund payroll';btn.className='btn financial';btn.onclick=startFunding}else if(run.approval!=='Approved'){btn.textContent='Approve payroll';btn.className='btn financial';btn.onclick=startApproval}else if(run.status==='Approved'){btn.textContent=`Pay ${all.length} people · ${money(total)}`;btn.className='btn financial';btn.onclick=processPayroll}else{btn.textContent=run.status==='Settled'?'Payroll complete':'View payment progress';btn.className='btn secondary';btn.onclick=()=>goPage('payments')}
+    document.getElementById('runStateLabel').textContent=run.status.toUpperCase();document.getElementById('runSummary').innerHTML=`<div class="kv"><span>Prepared</span><strong>${run.prepareDate}</strong></div><div class="kv"><span>Changes allowed until</span><strong>${run.cutoffDate}</strong></div><div class="kv"><span>Pay date</span><strong>${run.date}</strong></div><div class="kv"><span>Employees included</span><strong>${all.length}</strong></div><div class="kv"><span>Net payroll</span><strong>${money(total)}</strong></div><div class="kv"><span>Funding</span>${status(run.funding)}</div>${run.fundingAttempt?.providerReference?`<div class="kv"><span>Funding reference</span><strong>${run.fundingAttempt.providerReference}</strong></div>`:''}<div class="kv"><span>Approval</span>${status(run.approval)}</div><div class="scope-note"><strong>${editable?'Changes':'Changes closed'}:</strong> ${editable?`You can update this payroll until ${run.cutoffDate}.`:`This payroll can no longer be changed. New changes will apply to a later payroll.`}</div>${liveAdminMode()&&run.rawStatus==='FUNDING_PENDING'?'<div class="actions-row"><button class="btn secondary" onclick="refreshFunding()">Check funding status</button></div>':''}`;
+    const btn=document.getElementById('runPrimary');btn.disabled=false;if(issue.length){btn.textContent='Review employees';btn.className='btn primary';btn.onclick=()=>goPage('people')}else if(liveAdminMode()&&run.rawStatus==='READY'){btn.textContent='Fund payroll';btn.className='btn financial';btn.onclick=startFunding}else if(liveAdminMode()&&['AWAITING_FUNDING','FUNDING_PENDING'].includes(run.rawStatus)){btn.textContent='Continue funding';btn.className='btn financial';btn.onclick=startFunding}else if(liveAdminMode()&&run.rawStatus==='FUNDED'){btn.textContent='Ready for approval';btn.className='btn secondary';btn.disabled=true;btn.onclick=null}else if(liveAdminMode()){btn.textContent='Payroll needs attention';btn.className='btn secondary';btn.disabled=true;btn.onclick=null}else if(run.funding!=='Funded'){btn.textContent='Fund payroll';btn.className='btn financial';btn.onclick=startFunding}else if(run.approval!=='Approved'){btn.textContent='Approve payroll';btn.className='btn financial';btn.onclick=startApproval}else if(run.status==='Approved'){btn.textContent=`Pay ${all.length} people · ${money(total)}`;btn.className='btn financial';btn.onclick=processPayroll}else{btn.textContent=run.status==='Settled'?'Payroll complete':'View payment progress';btn.className='btn secondary';btn.onclick=()=>goPage('payments')}
   };
 
   function ensureAdjustmentModal(){
@@ -173,6 +182,67 @@
   ensureAdjustmentModal();
   window.openAdjustment=function(id){state.currentPerson=id;const p=state.people.find(x=>x.id===id);document.querySelector('#adjustmentModal h3').textContent=`Adjust ${p.name}'s pay`;document.getElementById('adjustmentSubtitle').textContent=`${currentRun()?.period||'Current'} payroll · Base pay ${money(p.pay)}`;document.getElementById('adjType').value='Bonus';document.getElementById('adjAmount').value='';document.getElementById('adjReason').value='';document.getElementById('adjSave').onclick=saveAdjustment;openModal('adjustmentModal')};
   async function saveAdjustment(){const p=state.people.find(x=>x.id===state.currentPerson),type=document.getElementById('adjType').value,raw=parseInt(document.getElementById('adjAmount').value.replace(/\D/g,''),10),reason=document.getElementById('adjReason').value.trim();if(!raw||!reason){toast('Complete adjustment','Amount and reason are required.');return}const amount=type==='Deduction'?-raw:raw;if(liveAdminMode()&&p?.payrollItemId&&currentRun()?.id){const typeMap={'Bonus':'bonus','Reimbursement':'reimbursement','Allowance':'allowance','Deduction':'deduction','Salary correction':'salary_correction','Other':'other'};try{const response=await window.IghoLive.api.addPayrollAdjustment(currentRun().id,p.payrollItemId,{type:typeMap[type]||'other',amount,reason});window.hydratePayrollDetailFromApi?.(response?.data?.payroll);closeModal('adjustmentModal');toast('Adjustment added',`${type} applied to ${p.name}.`)}catch(error){toast('Adjustment not added',error?.message||'This payroll can no longer be changed.')}return}p.adjustments=p.adjustments||[];p.adjustments.push({id:`ADJ-${Date.now()}`,type,amount,reason,createdBy:'Johannes Oghoro',createdAt:new Date().toISOString()});log('Payroll adjustment added',`${p.id} · ${type} · ${money(amount)}`,'Johannes Oghoro','Payroll');save();closeModal('adjustmentModal');render();toast('Adjustment added',`${type} applied to ${p.name}.`)}
+
+  const demoStartFunding=startFunding;
+  window.selectLiveFundingMethod=function(button,method){
+    document.querySelectorAll('#fundModal .fund-option').forEach(x=>x.classList.remove('selected'));
+    button.classList.add('selected');
+    window.ighoFundingMethod=method;
+  };
+  startFunding=async function(){
+    if(!liveAdminMode())return demoStartFunding();
+    const run=currentRun();
+    if(!run)return;
+    if(run.rawStatus==='FUNDING_PENDING'&&run.fundingAttempt?.authorizationUrl){
+      window.location.assign(run.fundingAttempt.authorizationUrl);
+      return;
+    }
+    if(run.rawStatus!=='READY'){
+      toast('Funding unavailable','This payroll is not ready to start a new funding attempt.');
+      return;
+    }
+    document.getElementById('fundModalTitle').textContent=`Fund ${run.period} payroll`;
+    document.getElementById('fundModalBody').innerHTML=`<div class="eyebrow">Amount to fund</div><div class="money funding-total">${money(calcRunTotal())}</div><div class="muted content-note">Choose how you want to add the payroll funds.</div><div class="fund-options"><button class="fund-option selected" type="button" onclick="selectLiveFundingMethod(this,'card')"><strong>Card</strong><small>Pay securely through Paystack.</small></button><button class="fund-option" type="button" onclick="selectLiveFundingMethod(this,'bank_transfer')"><strong>Bank transfer</strong><small>Use a Paystack bank transfer checkout.</small></button></div><div class="form-note">Igho marks the payroll funded only after Paystack confirms the payment.</div>`;
+    window.ighoFundingMethod='card';
+    const button=document.getElementById('fundConfirm');
+    button.textContent='Continue to Paystack';
+    button.onclick=confirmLiveFunding;
+    openModal('fundModal');
+  };
+  async function confirmLiveFunding(){
+    const run=currentRun(),button=document.getElementById('fundConfirm');
+    if(!run)return;
+    button.disabled=true;button.textContent='Starting funding…';
+    try{
+      const response=await window.IghoLive.api.startPayrollFunding(run.id,window.ighoFundingMethod||'card');
+      window.hydratePayrollDetailFromApi?.(response?.data?.payroll);
+      const checkout=response?.data?.checkout_url;
+      closeModal('fundModal');
+      if(checkout){
+        window.location.assign(checkout);
+        return;
+      }
+      toast('Funding started','The payroll funding attempt is pending.');
+    }catch(error){
+      toast('Funding not started',error?.message||'Could not start payroll funding.');
+    }finally{
+      button.disabled=false;button.textContent='Continue to Paystack';
+    }
+  }
+  window.refreshFunding=async function(){
+    const run=currentRun();
+    if(!liveAdminMode()||!run)return;
+    try{
+      const response=await window.IghoLive.api.refreshPayrollFunding(run.id);
+      window.hydratePayrollDetailFromApi?.(response?.data?.payroll);
+      const updated=response?.data?.payroll;
+      if(updated?.status==='FUNDED')toast('Payroll funded',`${money(Number(updated.totalNetPay||0))} confirmed and ready for approval.`);
+      else if(updated?.status==='READY')toast('Funding not completed','You can start another funding attempt.');
+      else toast('Funding pending','Paystack has not confirmed the funds yet.');
+    }catch(error){
+      toast('Could not check funding',error?.message||'Try again in a moment.');
+    }
+  };
 
   openPerson=function(id){const p=state.people.find(x=>x.id===id);if(!p)return;state.currentPerson=p.id;save();closeDrawer();goPage('employee');renderEmployeePortal?.()};
 
@@ -272,6 +342,7 @@
   window.hydratePayrollDetailFromApi=function(detail){
     if(!detail)return;
     const mappedRun=apiRunToState(detail);
+    mappedRun.fundingAttempt=detail.funding||null;
     const existingIndex=state.payrolls.findIndex(r=>r.id===mappedRun.id);
     if(existingIndex>=0)state.payrolls[existingIndex]=mappedRun;else state.payrolls.unshift(mappedRun);
     state.currentPayrollId=mappedRun.id;
