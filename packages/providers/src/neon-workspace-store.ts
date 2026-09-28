@@ -774,7 +774,7 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
             readiness_reason = case
               when not ${input.included} then 'Excluded from this payroll run'
               when pi.bank_verification_status = 'verified' then null
-              else coalesce(pi.readiness_reason, 'Bank account must be verified')
+              else 'Bank account must be verified'
             end,
             updated_at = now()
           from allowed a
@@ -791,7 +791,7 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
           from public.payroll_items
           where payroll_run_id = ${input.payrollRunId}::uuid
             and workspace_id = ${input.workspaceId}::uuid
-            and exists (select 1 from item_update)
+          having exists (select 1 from item_update)
         ), run_update as (
           update public.payroll_runs pr
           set
@@ -893,7 +893,7 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
           from public.payroll_items
           where payroll_run_id = ${input.payrollRunId}::uuid
             and workspace_id = ${input.workspaceId}::uuid
-            and exists (select 1 from item_update)
+          having exists (select 1 from item_update)
         ), run_update as (
           update public.payroll_runs pr
           set
