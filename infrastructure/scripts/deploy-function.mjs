@@ -14,7 +14,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 const CONFIG_PATH = "functions/igho-api/catalyst-config.json";
 const REQUIRED = ["DATABASE_URL", "NEON_AUTH_BASE_URL", "BOOTSTRAP_OWNER_EMAIL"];
-const OPTIONAL = ["IGHO_PUBLIC_ORIGIN"];
+const OPTIONAL = ["IGHO_PUBLIC_ORIGIN", "PAYSTACK_SECRET_KEY"];
 
 const dotenv = {};
 if (existsSync(".env")) {

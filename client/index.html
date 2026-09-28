@@ -45,7 +45,7 @@
 </section>
 
 <section class="page" id="people">
- <div class="page-head"><div><h1 class="page-title">People</h1><p class="page-sub">Employees and payroll recipients across The24thGroup.</p></div><button class="btn primary" onclick="preparePersonModal();openModal('personModal')">Add person</button></div>
+ <div class="page-head"><div><h1 class="page-title">People</h1><p class="page-sub">Manage employees, pay details and payroll readiness.</p></div><button class="btn primary" onclick="preparePersonModal();openModal('personModal')">Add employee</button></div>
  <div class="count-strip" id="peopleStats"></div>
  <div class="responsive-list-tools">
    <div class="mobile-search-row">
@@ -57,7 +57,7 @@
        <div class="toolbar-left">
          <input class="search desktop-search" id="peopleSearch" placeholder="Search name, email or role">
          <select class="select" id="peopleStatus"><option value="">All statuses</option><option>Active</option><option>Inactive</option></select>
-         <select class="select" id="peopleBank"><option value="">All bank states</option><option>Verified</option><option>Action required</option></select>
+         <select class="select" id="peopleBank" aria-label="Bank status"><option value="">All bank statuses</option><option>Verified</option><option>Action required</option></select>
        </div>
        <div class="toolbar-right">
          <button class="btn secondary filter-clear" id="peopleClearFilters" onclick="clearPeopleFilters()">Clear filters</button>
@@ -67,13 +67,13 @@
    </div>
  </div>
  <div class="bulkbar" id="peopleBulk"><strong id="selectedCount">0 selected</strong><div class="bulk-actions"><button class="btn" onclick="bulkInclude()">Include in payroll</button><button class="btn">Export</button><button class="btn" onclick="bulkInactive()">Mark inactive</button></div></div>
- <div class="table-shell desktop-table"><table><thead><tr><th class="select-col"><input class="checkbox" id="selectAll" type="checkbox"></th><th>Person</th><th>Role</th><th>Monthly pay</th><th>Bank</th><th>Payroll</th><th>Last paid</th></tr></thead><tbody id="peopleRows"></tbody></table></div>
+ <div class="table-shell desktop-table"><table><thead><tr><th class="select-col"><input class="checkbox" id="selectAll" type="checkbox"></th><th>Employee</th><th>Job title</th><th>Monthly pay</th><th>Bank status</th><th>Payroll</th><th>Last paid</th></tr></thead><tbody id="peopleRows"></tbody></table></div>
  <div class="mobile-records" id="peopleMobile"></div>
  <div class="pagination"><div id="peopleRange"></div><div class="page-controls"><button class="page-btn" id="peoplePrev">‹ Previous</button><button class="page-btn numbered active">1</button><button class="page-btn numbered">2</button><button class="page-btn numbered">3</button><button class="page-btn numbered">…</button><button class="page-btn numbered">6</button><button class="page-btn" id="peopleNext">Next ›</button><select class="select" id="peoplePageSize"><option value="25">25 / page</option><option value="50">50 / page</option><option value="100">100 / page</option></select></div></div>
 </section>
 
 <section class="page" id="payroll">
- <div class="page-head"><div><h1 class="page-title">Payroll</h1><p class="page-sub">Recurring and historical payroll runs.</p></div><div class="page-actions"><button class="btn secondary">Export</button><button class="btn primary" onclick="createPayroll()">Create payroll</button></div></div>
+ <div class="page-head"><div><h1 class="page-title">Payroll</h1><p class="page-sub">Review current and previous payrolls.</p></div><div class="page-actions"><button class="btn secondary">Export</button><button class="btn primary" onclick="createPayroll()">Prepare payroll</button></div></div>
  <div class="count-strip" id="payrollStats"></div>
  <div class="responsive-list-tools">
    <div class="mobile-search-row mobile-filters-only">
@@ -94,19 +94,19 @@
 </section>
 
 <section class="page" id="payrollrun">
- <div class="page-head"><div><h1 class="page-title">August 2026 Payroll</h1><p class="page-sub" id="runSubtitle"></p></div><div class="page-actions"><button class="btn secondary" onclick="goPage('payroll')">Back to payrolls</button><button class="btn financial" id="runPrimary"></button></div></div>
+ <div class="page-head"><div><h1 class="page-title">August 2026 Payroll</h1><p class="page-sub" id="runSubtitle"></p></div><div class="page-actions"><button class="btn secondary" onclick="goPage('payroll')">Back to payroll</button><button class="btn financial" id="runPrimary"></button></div></div>
  <div class="run-stats" id="runStats"></div>
  <div class="payroll-layout">
   <div>
    <div class="table-shell desktop-table"><table><thead><tr><th>Employee</th><th>Bank</th><th>Net pay</th><th>Readiness</th><th>Transfer</th></tr></thead><tbody id="recipientRows"></tbody></table></div>
    <div class="mobile-records" id="recipientMobile"></div>
   </div>
-  <aside><div class="surface surface-gap"><div class="surface-head"><strong>Readiness</strong><span id="runIssueCount"></span></div><div class="exception-list" id="runIssues"></div></div><div class="summary"><div class="surface-head"><strong>Run summary</strong><span id="runStateLabel"></span></div><div class="summary-body" id="runSummary"></div></div></aside>
+  <aside><div class="surface surface-gap"><div class="surface-head"><strong>Payroll checks</strong><span id="runIssueCount"></span></div><div class="exception-list" id="runIssues"></div></div><div class="summary"><div class="surface-head"><strong>Payroll summary</strong><span id="runStateLabel"></span></div><div class="summary-body" id="runSummary"></div></div></aside>
  </div>
 </section>
 
 <section class="page" id="payments">
- <div class="page-head"><div><h1 class="page-title">Payments</h1><p class="page-sub">Funding transactions and outgoing payroll transfers.</p></div><button class="btn secondary">Export ledger</button></div>
+ <div class="page-head"><div><h1 class="page-title">Payments</h1><p class="page-sub">Track money added to payroll and salary payments sent to employees.</p></div><button class="btn secondary">Export ledger</button></div>
  <div class="count-strip" id="paymentStats"></div>
  <div class="responsive-list-tools">
    <div class="mobile-search-row">
@@ -151,7 +151,7 @@
 </section>
 
 <section class="page" id="activity">
- <div class="page-head"><div><h1 class="page-title">Activity</h1><p class="page-sub">Audit history across payroll, people, payments and system events.</p></div><button class="btn secondary">Export audit log</button></div>
+ <div class="page-head"><div><h1 class="page-title">Activity</h1><p class="page-sub">A record of payroll, employee and payment activity.</p></div><button class="btn secondary">Export audit log</button></div>
  <div class="responsive-list-tools">
    <div class="mobile-search-row">
      <input class="search mobile-primary-search" id="activitySearchMobile" placeholder="Search activity">
@@ -177,17 +177,17 @@
 </section>
 
 <section class="page" id="employee">
- <div class="page-head"><div><h1 class="page-title">Employee portal</h1><p class="page-sub" id="employeeSubtitle"></p></div><button class="btn secondary" onclick="goPage('people')">Back to People</button></div>
+ <div class="page-head"><div><h1 class="page-title">Employee portal</h1><p class="page-sub" id="employeeSubtitle"></p></div><button class="btn secondary" onclick="goPage('people')">Back to employees</button></div>
  <div class="portal"><aside class="portal-side"><div class="portal-user" id="portalUser"></div><button class="portal-link active" data-portal="pay">My pay</button><button class="portal-link" data-portal="bank">Bank account</button><button class="portal-link" data-portal="slips">Payslips</button></aside><div class="portal-main" id="portalMain"></div></div>
 </section>
 </main>
 </div>
 
 <div class="drawer-wrap" id="drawerWrap"><aside class="drawer"><div class="drawer-head"><div><h3 id="drawerTitle"></h3><p id="drawerSubtitle"></p></div><button class="icon-btn" onclick="closeDrawer()">×</button></div><div class="drawer-body"><div class="drawer-tabs"><button class="drawer-tab active" data-tab="summary">Summary</button><button class="drawer-tab" data-tab="history">History</button><button class="drawer-tab" data-tab="audit">Audit</button></div><div class="drawer-section active" id="d-summary"></div><div class="drawer-section" id="d-history"></div><div class="drawer-section" id="d-audit"></div></div><div class="drawer-actions"><button class="btn secondary" onclick="closeDrawer()">Close</button><button class="btn primary" id="drawerPrimary"></button></div></aside></div>
-<div class="modal-wrap" id="fundModal"><div class="modal"><div class="modal-head"><h3>Fund August payroll</h3><button class="icon-btn" onclick="closeModal('fundModal')">×</button></div><div class="modal-body" id="fundModalBody"></div><div class="modal-foot"><button class="btn secondary" onclick="closeModal('fundModal')">Cancel</button><button class="btn financial" id="fundConfirm">Continue</button></div></div></div>
-<div class="modal-wrap" id="approveModal"><div class="modal"><div class="modal-head"><h3>Approve payroll</h3><button class="icon-btn" onclick="closeModal('approveModal')">×</button></div><div class="modal-body" id="approveModalBody"></div><div class="modal-foot"><button class="btn secondary" onclick="closeModal('approveModal')">Cancel</button><button class="btn financial" id="approveConfirm"></button></div></div></div>
-<div class="modal-wrap" id="personModal"><div class="modal"><div class="modal-head"><h3 id="personModalTitle">Add person</h3><button class="icon-btn" onclick="closeModal('personModal')">×</button></div><div class="modal-body"><div id="personInviteFields"><div class="stack-md"><div class="field"><input id="newName" placeholder="Employee name"></div><div class="field"><input id="newEmail" placeholder="name@example.com"></div><div class="field"><input id="newRole" placeholder="Role"></div><div class="field"><input id="newPay" placeholder="Monthly pay, e.g. 175000"></div></div><div class="notice">Create a secure employee invitation. For M1 testing, Igho will give you a link to open in another browser or device.</div></div><div id="inviteResult" class="invite-result" hidden><strong>Invitation ready</strong><p>Send this secure link to the invited employee. It expires after 7 days.</p><div class="invite-link-row"><input id="inviteLink" readonly aria-label="Invitation link"><button class="btn secondary" id="copyInviteLink" type="button">Copy link</button></div></div></div><div class="modal-foot"><button class="btn secondary" onclick="closeModal('personModal')">Cancel</button><button class="btn primary" id="addPersonConfirm">Add & invite</button></div></div></div>
-<div class="modal-wrap" id="bankModal"><div class="modal"><div class="modal-head"><h3>Update bank account</h3><button class="icon-btn" onclick="closeModal('bankModal')">×</button></div><div class="modal-body"><div class="stack-md"><div class="field"><select id="bankName"><option>GTBank</option><option>Access Bank</option><option>First Bank</option><option>Zenith Bank</option></select></div><div class="field"><input id="accountNumber" placeholder="10-digit account number"></div><div class="field"><input id="resolvedName" readonly></div></div><div class="notice">Enter the employee’s 10-digit account number. The account name will be checked before saving.</div></div><div class="modal-foot"><button class="btn secondary" onclick="closeModal('bankModal')">Cancel</button><button class="btn primary" id="bankConfirm">Verify & save</button></div></div></div>
+<div class="modal-wrap" id="fundModal"><div class="modal"><div class="modal-head"><div><h3 id="fundModalTitle">Fund payroll</h3><p class="modal-subtitle">Add the money required for this payroll.</p></div><button class="icon-btn" onclick="closeModal('fundModal')" aria-label="Close">×</button></div><div class="modal-body" id="fundModalBody"></div><div class="modal-foot"><button class="btn secondary" onclick="closeModal('fundModal')">Cancel</button><button class="btn financial" id="fundConfirm">Continue</button></div></div></div>
+<div class="modal-wrap" id="approveModal"><div class="modal"><div class="modal-head"><div><h3>Approve payroll</h3><p class="modal-subtitle">Review the final payroll before salary payments are released.</p></div><button class="icon-btn" onclick="closeModal('approveModal')" aria-label="Close">×</button></div><div class="modal-body" id="approveModalBody"></div><div class="modal-foot"><button class="btn secondary" onclick="closeModal('approveModal')">Cancel</button><button class="btn financial" id="approveConfirm"></button></div></div></div>
+<div class="modal-wrap" id="personModal"><div class="modal"><div class="modal-head"><div><h3 id="personModalTitle">Add employee</h3><p class="modal-subtitle">Add employment details and invite them to Igho.</p></div><button class="icon-btn" onclick="closeModal('personModal')" aria-label="Close">×</button></div><div class="modal-body"><div id="personInviteFields"><section class="form-section"><div class="form-section-head"><strong>Employee details</strong><span>Used across payroll and the employee portal.</span></div><div class="form-grid two-col"><label class="field"><span class="field-label">Full name</span><input id="newName" autocomplete="name" placeholder="e.g. Amara Okafor"></label><label class="field"><span class="field-label">Work email</span><input id="newEmail" type="email" autocomplete="email" placeholder="name@example.com"></label><label class="field"><span class="field-label">Job title</span><input id="newRole" placeholder="e.g. Operations Coordinator"></label><label class="field"><span class="field-label">Monthly salary</span><span class="field-with-prefix"><span class="field-prefix">₦</span><input id="newPay" inputmode="numeric" placeholder="175,000"></span><small class="field-help">Gross monthly salary in NGN.</small></label></div></section><div class="form-note">An invitation link will be created so the employee can set up their account and access their own payroll details.</div></div><div id="inviteResult" class="invite-result" hidden><strong>Invitation ready</strong><p>Share this link with the employee. It expires after 7 days.</p><label class="field"><span class="field-label">Invitation link</span><div class="invite-link-row"><input id="inviteLink" readonly><button class="btn secondary" id="copyInviteLink" type="button">Copy link</button></div></label></div></div><div class="modal-foot"><button class="btn secondary" onclick="closeModal('personModal')">Cancel</button><button class="btn primary" id="addPersonConfirm">Add employee</button></div></div></div>
+<div class="modal-wrap" id="bankModal"><div class="modal"><div class="modal-head"><div><h3>Salary bank account</h3><p class="modal-subtitle">Choose where salary payments should be sent.</p></div><button class="icon-btn" onclick="closeModal('bankModal')" aria-label="Close">×</button></div><div class="modal-body"><section class="form-section"><div class="form-grid"><label class="field"><span class="field-label">Bank</span><select id="bankName"><option>GTBank</option><option>Access Bank</option><option>First Bank</option><option>Zenith Bank</option></select></label><label class="field"><span class="field-label">Account number</span><input id="accountNumber" inputmode="numeric" maxlength="10" placeholder="10-digit account number"><small class="field-help">Use the account that should receive salary payments.</small></label><label class="field"><span class="field-label">Account name</span><input id="resolvedName" readonly placeholder="Verified account name will appear here"><small class="field-help">We verify the account name before saving.</small></label></div></section></div><div class="modal-foot"><button class="btn secondary" onclick="closeModal('bankModal')">Cancel</button><button class="btn primary" id="bankConfirm">Verify account</button></div></div></div>
 <div class="toast" id="toast"><strong id="toastTitle"></strong><small id="toastText"></small></div>
 <script type="module" src="js/live-runtime.js"></script>
 <script src="main.js"></script>

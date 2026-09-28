@@ -76,8 +76,23 @@ body.employee-mode .topbar {
   display: none;
 }
 
+body.employee-mode .app {
+  display: block;
+  width: 100%;
+  height: 100dvh;
+}
+
 body.employee-mode .main {
+  width: 100%;
+  height: 100dvh;
   margin-left: 0;
+  min-height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+body.employee-mode #employee {
+  width: 100%;
   min-height: 100vh;
 }
 

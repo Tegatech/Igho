@@ -49,6 +49,11 @@ document.getElementById("bootstrapBtn").addEventListener("click", async () => {
 });
 
 document.getElementById("continueBtn").addEventListener("click", async () => {
+  if (inviteToken && !inviteAccepted) {
+    await acceptInvitationIfNeeded();
+    return;
+  }
+
   await performSession(async () => {
     await ighoApi.me();
     window.location.assign(returnTo);
@@ -72,18 +77,13 @@ function setupInviteExperience() {
   document.getElementById("inviteContextName").textContent = inviteName || "The24thGroup employee";
   document.getElementById("inviteContextEmail").textContent = inviteEmail;
   document.getElementById("authTitle").textContent = "Join The24thGroup";
-  document.getElementById("authSubtitle").textContent = "Your invitation is ready. Create an Igho account or sign in to continue.";
+  document.getElementById("authSubtitle").textContent = "Create your Igho account or sign in to access your payroll details.";
 
   if (inviteName) document.getElementById("signupName").value = inviteName;
   if (inviteEmail) {
     document.getElementById("signupEmail").value = inviteEmail;
     document.getElementById("signinEmail").value = inviteEmail;
   }
-
-  ["signupName", "signupEmail", "signinEmail"].forEach((id) => {
-    const input = document.getElementById(id);
-    if (input?.closest("label")) input.closest("label").hidden = true;
-  });
 
   switchMode("signup");
 }
@@ -142,7 +142,7 @@ async function acceptInvitationIfNeeded() {
   if (!inviteToken || inviteAccepted) return;
 
   sessionMessage.classList.remove("error");
-  sessionMessage.textContent = "Joining The24thGroup…";
+  sessionMessage.textContent = "Setting up your employee access…";
 
   try {
     await ighoApi.acceptInvitation(inviteToken);
@@ -151,6 +151,7 @@ async function acceptInvitationIfNeeded() {
     if (!(error instanceof IghoApiError && error.code === "INVITE_004")) {
       sessionMessage.classList.add("error");
       sessionMessage.textContent = error?.message || "Could not accept this invitation.";
+      document.getElementById("continueBtn").textContent = "Retry joining Igho";
       return;
     }
 
@@ -161,7 +162,8 @@ async function acceptInvitationIfNeeded() {
     } catch {
       sessionMessage.classList.add("error");
       sessionMessage.textContent =
-        "This invitation is invalid, expired, or belongs to another email address.";
+        "This invitation is invalid, has expired, or was issued to another email address.";
+      document.getElementById("continueBtn").textContent = "Retry joining Igho";
       return;
     }
   }
@@ -171,6 +173,8 @@ async function acceptInvitationIfNeeded() {
   sessionMessage.textContent = roles.length
     ? `Joined The24thGroup. Role: ${roles.join(", ")}.`
     : "Joined The24thGroup.";
+
+  window.location.replace(returnTo);
 }
 
 async function perform(action) {

@@ -7,8 +7,8 @@ Execution mirror: Asana project "Igho"
 ## Milestones
 
 - [x] M0 — Foundation & standards alignment
-- [ ] M1 — Auth, workspace & access model
-- [ ] M2 — People & bank readiness
+- [x] M1 — Auth, workspace & access model
+- [x] M2 — People & bank readiness
 - [ ] M3 — Payroll engine
 - [ ] M4 — Funding
 - [ ] M5 — Approval & payouts
@@ -43,4 +43,4 @@ Production scaffolding now exists alongside the static demo:
 - Prettier source/config checks
 - GitHub Actions quality gate
 
-M1 is now the active implementation milestone.
+M1 and M2 are complete. M3 — Payroll engine is now the active implementation milestone.

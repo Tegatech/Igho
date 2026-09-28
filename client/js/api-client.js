@@ -39,8 +39,38 @@ export const ighoApi = {
   me: () => apiRequest("/me"),
   bootstrap: () => apiRequest("/bootstrap", { method: "POST" }),
   people: () => apiRequest("/people"),
+  payrollRuns: () => apiRequest("/payroll-runs"),
+  currentPayroll: () => apiRequest("/payroll-runs/current"),
+  payrollRun: (runId) => apiRequest(`/payroll-runs/${runId}`),
+  preparePayroll: (period) =>
+    apiRequest("/payroll-runs/prepare", {
+      method: "POST",
+      body: JSON.stringify(period ? { period } : {}),
+    }),
+  setPayrollItemIncluded: (runId, itemId, included) =>
+    apiRequest(`/payroll-runs/${runId}/items/${itemId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ included }),
+    }),
+  addPayrollAdjustment: (runId, itemId, adjustment) =>
+    apiRequest(`/payroll-runs/${runId}/items/${itemId}/adjustments`, {
+      method: "POST",
+      body: JSON.stringify(adjustment),
+    }),
+  startPayrollFunding: (runId, method) =>
+    apiRequest(`/payroll-runs/${runId}/funding`, {
+      method: "POST",
+      body: JSON.stringify({ method }),
+    }),
+  refreshPayrollFunding: (runId) =>
+    apiRequest(`/payroll-runs/${runId}/funding/refresh`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    }),
+  myPay: () => apiRequest("/me/pay"),
   myProfile: () => apiRequest("/me/profile"),
   myBankAccount: () => apiRequest("/me/bank-account"),
+  myPayslips: () => apiRequest("/me/payslips"),
   banks: () => apiRequest("/banks"),
   saveMyBankAccount: (bankCode, accountNumber) =>
     apiRequest("/me/bank-account", {

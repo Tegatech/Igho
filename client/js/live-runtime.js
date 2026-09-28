@@ -95,15 +95,52 @@ async function hydrateLivePeople(me) {
 
   const roles = Array.isArray(me.roles) ? me.roles : [];
   if (roles.includes("OWNER") || roles.includes("PAYROLL_ADMIN")) {
-    const response = await ighoApi.people();
-    window.hydratePeopleFromApi?.(response?.data?.items || []);
+    const [peopleResponse, runsResponse, currentResponse] = await Promise.all([
+      ighoApi.people(),
+      ighoApi.payrollRuns(),
+      ighoApi.currentPayroll(),
+    ]);
+    window.hydratePeopleFromApi?.(peopleResponse?.data?.items || []);
+
+    const runs = runsResponse?.data?.items || [];
+    const current = currentResponse?.data?.payroll || null;
+    let detail = null;
+    if (current?.id) {
+      const detailResponse = await ighoApi.payrollRun(current.id);
+      detail = detailResponse?.data?.payroll || null;
+    }
+    window.hydratePayrollFromApi?.(runs, detail);
+
+    const fundingReference = params.get("funding");
+    if (fundingReference && current?.id) {
+      try {
+        const fundingResponse = await ighoApi.refreshPayrollFunding(current.id);
+        window.hydratePayrollDetailFromApi?.(fundingResponse?.data?.payroll || null);
+      } finally {
+        params.delete("funding");
+        const nextQuery = params.toString();
+        window.history.replaceState(
+          {},
+          "",
+          `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}`,
+        );
+      }
+    }
     return;
   }
 
   if (roles.includes("EMPLOYEE")) {
     try {
-      const response = await ighoApi.myProfile();
-      window.hydrateEmployeeFromApi?.(response?.data);
+      const [profileResponse, payResponse, payslipResponse] = await Promise.all([
+        ighoApi.myProfile(),
+        ighoApi.myPay(),
+        ighoApi.myPayslips(),
+      ]);
+      window.IghoEmployeeLiveData = {
+        pay: payResponse?.data || null,
+        payslips: payslipResponse?.data || { items: [] },
+      };
+      window.hydrateEmployeeFromApi?.(profileResponse?.data);
       window.goPage("employee");
       window.renderEmployeePortal?.();
     } catch (error) {
