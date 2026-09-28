@@ -56,6 +56,33 @@ interface PayrollRunRow {
   prepared_at: string;
 }
 
+interface PayrollItemDetailRow {
+  id: string;
+  employee_id: string;
+  employee_name: string;
+  job_title: string;
+  base_pay: string;
+  adjustment_total: string;
+  net_pay: string;
+  currency: string;
+  included: boolean;
+  readiness_status: "ready" | "action_required" | "excluded";
+  readiness_reason: string | null;
+  bank_verification_status: "action_required" | "pending" | "verified" | "failed" | null;
+  bank_name: string | null;
+  account_number_last4: string | null;
+}
+
+interface PayrollAdjustmentRow {
+  id: string;
+  payroll_item_id: string;
+  adjustment_type: string;
+  amount: string;
+  reason: string;
+  reference: string | null;
+  created_at: string;
+}
+
 interface EmployeePayRow {
   payroll_run_id: string;
   payroll_item_id: string;
@@ -587,6 +614,327 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
         limit 1
       `) as PayrollRunRow[];
       return emptyRows[0] ? mapPayrollRun(emptyRows[0]) : null;
+    },
+
+    async listPayrollRuns(workspaceId: string) {
+      const rows = (await sql`
+        select
+          id::text,
+          period_year,
+          period_month,
+          pay_date::text,
+          preparation_date::text,
+          cutoff_date::text,
+          currency,
+          status,
+          employee_count,
+          included_count,
+          total_base_pay::text,
+          total_adjustments::text,
+          total_net_pay::text,
+          prepared_at::text
+        from public.payroll_runs
+        where workspace_id = ${workspaceId}::uuid
+        order by pay_date desc, created_at desc
+      `) as PayrollRunRow[];
+      return rows.map(mapPayrollRun);
+    },
+
+    async getPayrollRunDetail(input: { workspaceId: string; payrollRunId: string }) {
+      const runRows = (await sql`
+        select
+          id::text,
+          period_year,
+          period_month,
+          pay_date::text,
+          preparation_date::text,
+          cutoff_date::text,
+          currency,
+          status,
+          employee_count,
+          included_count,
+          total_base_pay::text,
+          total_adjustments::text,
+          total_net_pay::text,
+          prepared_at::text
+        from public.payroll_runs
+        where id = ${input.payrollRunId}::uuid
+          and workspace_id = ${input.workspaceId}::uuid
+        limit 1
+      `) as PayrollRunRow[];
+      const run = runRows[0];
+      if (!run) return null;
+
+      const itemRows = (await sql`
+        select
+          pi.id::text,
+          pi.employee_id::text,
+          pi.employee_name,
+          pi.job_title,
+          pi.base_pay::text,
+          pi.adjustment_total::text,
+          pi.net_pay::text,
+          pi.currency,
+          pi.included,
+          pi.readiness_status,
+          pi.readiness_reason,
+          pi.bank_verification_status,
+          b.bank_name,
+          b.account_number_last4
+        from public.payroll_items pi
+        left join public.employee_bank_accounts b on b.id = pi.bank_account_id
+        where pi.payroll_run_id = ${input.payrollRunId}::uuid
+          and pi.workspace_id = ${input.workspaceId}::uuid
+        order by pi.employee_name asc
+      `) as PayrollItemDetailRow[];
+
+      const adjustmentRows = (await sql`
+        select
+          pa.id::text,
+          pa.payroll_item_id::text,
+          pa.adjustment_type,
+          pa.amount::text,
+          pa.reason,
+          pa.reference,
+          pa.created_at::text
+        from public.payroll_adjustments pa
+        where pa.payroll_run_id = ${input.payrollRunId}::uuid
+          and pa.workspace_id = ${input.workspaceId}::uuid
+        order by pa.created_at asc
+      `) as PayrollAdjustmentRow[];
+
+      const adjustmentsByItem = new Map<string, PayrollAdjustmentRow[]>();
+      for (const row of adjustmentRows) {
+        const existing = adjustmentsByItem.get(row.payroll_item_id) ?? [];
+        existing.push(row);
+        adjustmentsByItem.set(row.payroll_item_id, existing);
+      }
+
+      return {
+        ...mapPayrollRun(run),
+        items: itemRows.map((row) => ({
+          id: row.id,
+          employeeId: row.employee_id,
+          employeeName: row.employee_name,
+          jobTitle: row.job_title,
+          basePay: Number(row.base_pay),
+          adjustmentTotal: Number(row.adjustment_total),
+          netPay: Number(row.net_pay),
+          currency: row.currency,
+          included: row.included,
+          readinessStatus: row.readiness_status,
+          readinessReason: row.readiness_reason,
+          bankVerificationStatus: row.bank_verification_status,
+          bankName: row.bank_name,
+          accountNumberLast4: row.account_number_last4,
+          adjustments: (adjustmentsByItem.get(row.id) ?? []).map((adjustment) => ({
+            id: adjustment.id,
+            type: adjustment.adjustment_type,
+            amount: Number(adjustment.amount),
+            reason: adjustment.reason,
+            reference: adjustment.reference,
+            createdAt: adjustment.created_at,
+          })),
+        })),
+      };
+    },
+
+    async setPayrollItemIncluded(input: {
+      workspaceId: string;
+      payrollRunId: string;
+      payrollItemId: string;
+      included: boolean;
+      actorAuthUserId: string;
+      requestId: string;
+    }) {
+      const rows = (await sql`
+        with target as (
+          select pi.id, pi.readiness_status, pr.status, pr.cutoff_date
+          from public.payroll_items pi
+          join public.payroll_runs pr on pr.id = pi.payroll_run_id
+          where pi.id = ${input.payrollItemId}::uuid
+            and pi.payroll_run_id = ${input.payrollRunId}::uuid
+            and pi.workspace_id = ${input.workspaceId}::uuid
+            and pr.workspace_id = ${input.workspaceId}::uuid
+          for update
+        ), allowed as (
+          select *
+          from target
+          where status in ('DRAFT','READY')
+            and current_date <= cutoff_date
+        ), item_update as (
+          update public.payroll_items pi
+          set
+            included = ${input.included},
+            readiness_status = case
+              when not ${input.included} then 'excluded'
+              when pi.bank_verification_status = 'verified' then 'ready'
+              else 'action_required'
+            end,
+            readiness_reason = case
+              when not ${input.included} then 'Excluded from this payroll run'
+              when pi.bank_verification_status = 'verified' then null
+              else coalesce(pi.readiness_reason, 'Bank account must be verified')
+            end,
+            updated_at = now()
+          from allowed a
+          where pi.id = a.id
+          returning pi.id
+        ), summary as (
+          select
+            count(*)::int as employee_count,
+            count(*) filter (where included)::int as included_count,
+            count(*) filter (where included and readiness_status <> 'ready')::int as not_ready_count,
+            coalesce(sum(base_pay) filter (where included),0) as total_base_pay,
+            coalesce(sum(adjustment_total) filter (where included),0) as total_adjustments,
+            coalesce(sum(net_pay) filter (where included),0) as total_net_pay
+          from public.payroll_items
+          where payroll_run_id = ${input.payrollRunId}::uuid
+            and workspace_id = ${input.workspaceId}::uuid
+            and exists (select 1 from item_update)
+        ), run_update as (
+          update public.payroll_runs pr
+          set
+            employee_count = s.employee_count,
+            included_count = s.included_count,
+            total_base_pay = s.total_base_pay,
+            total_adjustments = s.total_adjustments,
+            total_net_pay = s.total_net_pay,
+            status = case when s.included_count > 0 and s.not_ready_count = 0 then 'READY' else 'DRAFT' end,
+            updated_at = now()
+          from summary s
+          where pr.id = ${input.payrollRunId}::uuid
+            and pr.workspace_id = ${input.workspaceId}::uuid
+          returning pr.id
+        ), audit as (
+          insert into public.audit_events (
+            workspace_id, actor_auth_user_id, action, resource_type,
+            resource_id, outcome, request_id, metadata
+          )
+          select
+            ${input.workspaceId}::uuid,
+            ${input.actorAuthUserId}::uuid,
+            case when ${input.included} then 'payroll.item.included' else 'payroll.item.excluded' end,
+            'payroll_item',
+            iu.id,
+            'success',
+            ${input.requestId},
+            jsonb_build_object('payroll_run_id', ${input.payrollRunId}::text)
+          from item_update iu
+        )
+        select
+          exists(select 1 from target) as found,
+          exists(select 1 from allowed) as editable,
+          exists(select 1 from item_update) as updated
+      `) as { found: boolean; editable: boolean; updated: boolean }[];
+      return rows[0] ?? { found: false, editable: false, updated: false };
+    },
+
+    async addPayrollAdjustment(input: {
+      workspaceId: string;
+      payrollRunId: string;
+      payrollItemId: string;
+      type: string;
+      amount: number;
+      reason: string;
+      reference?: string;
+      actorAuthUserId: string;
+      requestId: string;
+    }) {
+      const rows = (await sql`
+        with target as (
+          select pi.id, pi.net_pay, pr.status, pr.cutoff_date
+          from public.payroll_items pi
+          join public.payroll_runs pr on pr.id = pi.payroll_run_id
+          where pi.id = ${input.payrollItemId}::uuid
+            and pi.payroll_run_id = ${input.payrollRunId}::uuid
+            and pi.workspace_id = ${input.workspaceId}::uuid
+            and pr.workspace_id = ${input.workspaceId}::uuid
+          for update
+        ), allowed as (
+          select *
+          from target
+          where status in ('DRAFT','READY')
+            and current_date <= cutoff_date
+            and net_pay + ${input.amount} >= 0
+        ), adjustment as (
+          insert into public.payroll_adjustments (
+            workspace_id, payroll_run_id, payroll_item_id, adjustment_type,
+            amount, reason, reference, created_by
+          )
+          select
+            ${input.workspaceId}::uuid,
+            ${input.payrollRunId}::uuid,
+            a.id,
+            ${input.type},
+            ${input.amount},
+            ${input.reason},
+            ${input.reference ?? null},
+            ${input.actorAuthUserId}::uuid
+          from allowed a
+          returning id, payroll_item_id
+        ), item_update as (
+          update public.payroll_items pi
+          set
+            adjustment_total = pi.adjustment_total + ${input.amount},
+            net_pay = pi.net_pay + ${input.amount},
+            updated_at = now()
+          from adjustment a
+          where pi.id = a.payroll_item_id
+          returning pi.id
+        ), summary as (
+          select
+            count(*)::int as employee_count,
+            count(*) filter (where included)::int as included_count,
+            count(*) filter (where included and readiness_status <> 'ready')::int as not_ready_count,
+            coalesce(sum(base_pay) filter (where included),0) as total_base_pay,
+            coalesce(sum(adjustment_total) filter (where included),0) as total_adjustments,
+            coalesce(sum(net_pay) filter (where included),0) as total_net_pay
+          from public.payroll_items
+          where payroll_run_id = ${input.payrollRunId}::uuid
+            and workspace_id = ${input.workspaceId}::uuid
+            and exists (select 1 from item_update)
+        ), run_update as (
+          update public.payroll_runs pr
+          set
+            employee_count = s.employee_count,
+            included_count = s.included_count,
+            total_base_pay = s.total_base_pay,
+            total_adjustments = s.total_adjustments,
+            total_net_pay = s.total_net_pay,
+            status = case when s.included_count > 0 and s.not_ready_count = 0 then 'READY' else 'DRAFT' end,
+            updated_at = now()
+          from summary s
+          where pr.id = ${input.payrollRunId}::uuid
+            and pr.workspace_id = ${input.workspaceId}::uuid
+          returning pr.id
+        ), audit as (
+          insert into public.audit_events (
+            workspace_id, actor_auth_user_id, action, resource_type,
+            resource_id, outcome, request_id, metadata
+          )
+          select
+            ${input.workspaceId}::uuid,
+            ${input.actorAuthUserId}::uuid,
+            'payroll.adjustment.added',
+            'payroll_item',
+            a.payroll_item_id,
+            'success',
+            ${input.requestId},
+            jsonb_build_object(
+              'payroll_run_id', ${input.payrollRunId}::text,
+              'adjustment_id', a.id::text,
+              'type', ${input.type},
+              'amount', ${input.amount}
+            )
+          from adjustment a
+        )
+        select
+          exists(select 1 from target) as found,
+          exists(select 1 from allowed) as editable,
+          exists(select 1 from adjustment) as created
+      `) as { found: boolean; editable: boolean; created: boolean }[];
+      return rows[0] ?? { found: false, editable: false, created: false };
     },
 
     async getEmployeeUpcomingPay(input: { workspaceId: string; membershipId: string }) {
