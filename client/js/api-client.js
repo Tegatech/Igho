@@ -39,8 +39,16 @@ export const ighoApi = {
   me: () => apiRequest("/me"),
   bootstrap: () => apiRequest("/bootstrap", { method: "POST" }),
   people: () => apiRequest("/people"),
+  currentPayroll: () => apiRequest("/payroll-runs/current"),
+  preparePayroll: (period) =>
+    apiRequest("/payroll-runs/prepare", {
+      method: "POST",
+      body: JSON.stringify(period ? { period } : {}),
+    }),
+  myPay: () => apiRequest("/me/pay"),
   myProfile: () => apiRequest("/me/profile"),
   myBankAccount: () => apiRequest("/me/bank-account"),
+  myPayslips: () => apiRequest("/me/payslips"),
   banks: () => apiRequest("/banks"),
   saveMyBankAccount: (bankCode, accountNumber) =>
     apiRequest("/me/bank-account", {
