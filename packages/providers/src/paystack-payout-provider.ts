@@ -70,7 +70,7 @@ export function createPaystackPayoutProvider(secretKey: string) {
       const recipientCode =
         typeof data.recipient === "string"
           ? data.recipient
-          : data.recipient?.recipient_code ?? null;
+          : (data.recipient?.recipient_code ?? null);
 
       return {
         reference: data.reference ?? input.reference,
@@ -96,7 +96,7 @@ export function createPaystackPayoutProvider(secretKey: string) {
       const recipientCode =
         typeof data.recipient === "string"
           ? data.recipient
-          : data.recipient?.recipient_code ?? null;
+          : (data.recipient?.recipient_code ?? null);
 
       return {
         reference: data.reference ?? reference,
