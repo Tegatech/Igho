@@ -102,8 +102,16 @@ async function hydrateLivePeople(me) {
 
   if (roles.includes("EMPLOYEE")) {
     try {
-      const response = await ighoApi.myProfile();
-      window.hydrateEmployeeFromApi?.(response?.data);
+      const [profileResponse, payResponse, payslipResponse] = await Promise.all([
+        ighoApi.myProfile(),
+        ighoApi.myPay(),
+        ighoApi.myPayslips(),
+      ]);
+      window.IghoEmployeeLiveData = {
+        pay: payResponse?.data || null,
+        payslips: payslipResponse?.data || { items: [] },
+      };
+      window.hydrateEmployeeFromApi?.(profileResponse?.data);
       window.goPage("employee");
       window.renderEmployeePortal?.();
     } catch (error) {
