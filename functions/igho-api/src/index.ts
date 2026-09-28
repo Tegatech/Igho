@@ -461,9 +461,8 @@ app.post(
     }
 
     const body = req.body as { period?: unknown };
-    const period = typeof body.period === "string" && body.period.trim()
-      ? body.period.trim()
-      : undefined;
+    const period =
+      typeof body.period === "string" && body.period.trim() ? body.period.trim() : undefined;
 
     try {
       const payroll = await workspaceStore.preparePayrollRun({
