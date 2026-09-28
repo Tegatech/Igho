@@ -1194,7 +1194,8 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
       reason: string;
       providerPayload?: unknown;
     }) {
-      const payload = input.providerPayload == null ? null : JSON.stringify(input.providerPayload);
+      const payload =
+        input.providerPayload == null ? null : JSON.stringify(input.providerPayload);
       const rows = (await sql`
         with attempt as (
           update public.payroll_funding_attempts
@@ -1248,7 +1249,8 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
       requestId: string;
     }) {
       const expectedAmount = input.amountMinor / 100;
-      const payload = input.providerPayload == null ? null : JSON.stringify(input.providerPayload);
+      const payload =
+        input.providerPayload == null ? null : JSON.stringify(input.providerPayload);
       const targetRows = (await sql`
         select
           id::text,
@@ -1273,7 +1275,7 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
       `) as PayrollFundingAttemptRow[];
       const target = targetRows[0];
       if (!target) return { found: false, valid: false, funding: null };
-      if (target.status === 'settled') {
+      if (target.status === "settled") {
         return { found: true, valid: true, funding: mapFundingAttempt(target) };
       }
       if (Number(target.amount) !== expectedAmount || target.currency !== input.currency) {
@@ -1341,7 +1343,11 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
         from attempt
       `) as PayrollFundingAttemptRow[];
       const row = rows[0];
-      return { found: true, valid: true, funding: row ? mapFundingAttempt(row) : mapFundingAttempt(target) };
+      return {
+        found: true,
+        valid: true,
+        funding: row ? mapFundingAttempt(row) : mapFundingAttempt(target),
+      };
     },
 
     async getLatestPayrollFunding(input: { workspaceId: string; payrollRunId: string }) {
