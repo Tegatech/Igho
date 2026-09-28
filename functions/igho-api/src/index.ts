@@ -46,6 +46,14 @@ interface AuthenticatedRequest extends Request {
   ighoAccess?: AccessContext;
 }
 
+function routeParam(value: string | string[] | undefined): string | null {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (Array.isArray(value) && typeof value[0] === "string" && value[0].trim()) {
+    return value[0].trim();
+  }
+  return null;
+}
+
 async function authenticate(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   const id = requestId(req);
   // Catalyst's API Gateway treats `Authorization: Bearer` as a Zoho OAuth token and
@@ -279,9 +287,15 @@ app.get(
       return;
     }
 
+    const runId = routeParam(req.params.runId);
+    if (!runId) {
+      fail(res, id, 422, "PAYROLL_008", "Payroll run id is required");
+      return;
+    }
+
     const payroll = await workspaceStore.getPayrollRunDetail({
       workspaceId: access.workspaceId,
-      payrollRunId: req.params.runId,
+      payrollRunId: runId,
     });
 
     if (!payroll) {
@@ -318,10 +332,17 @@ app.patch(
       return;
     }
 
+    const runId = routeParam(req.params.runId);
+    const itemId = routeParam(req.params.itemId);
+    if (!runId || !itemId) {
+      fail(res, id, 422, "PAYROLL_008", "Payroll run id and item id are required");
+      return;
+    }
+
     const result = await workspaceStore.setPayrollItemIncluded({
       workspaceId: access.workspaceId,
-      payrollRunId: req.params.runId,
-      payrollItemId: req.params.itemId,
+      payrollRunId: runId,
+      payrollItemId: itemId,
       included: body.included,
       actorAuthUserId: access.authUserId,
       requestId: id,
@@ -346,7 +367,7 @@ app.patch(
 
     const payroll = await workspaceStore.getPayrollRunDetail({
       workspaceId: access.workspaceId,
-      payrollRunId: req.params.runId,
+      payrollRunId: runId,
     });
     ok(res, id, { payroll });
   },
@@ -404,10 +425,17 @@ app.post(
       return;
     }
 
+    const runId = routeParam(req.params.runId);
+    const itemId = routeParam(req.params.itemId);
+    if (!runId || !itemId) {
+      fail(res, id, 422, "PAYROLL_008", "Payroll run id and item id are required");
+      return;
+    }
+
     const result = await workspaceStore.addPayrollAdjustment({
       workspaceId: access.workspaceId,
-      payrollRunId: req.params.runId,
-      payrollItemId: req.params.itemId,
+      payrollRunId: runId,
+      payrollItemId: itemId,
       type,
       amount,
       reason,
@@ -435,7 +463,7 @@ app.post(
 
     const payroll = await workspaceStore.getPayrollRunDetail({
       workspaceId: access.workspaceId,
-      payrollRunId: req.params.runId,
+      payrollRunId: runId,
     });
     ok(res, id, { payroll }, 201);
   },
