@@ -2,10 +2,10 @@ function openDrawer(title,subtitle,summary,history,audit,primary,action){documen
 function closeDrawer(){document.getElementById("drawerWrap").classList.remove("open")}
 document.getElementById("drawerWrap").onclick=e=>{if(e.target.id==="drawerWrap")closeDrawer()};
 document.querySelectorAll(".drawer-tab").forEach(t=>t.onclick=()=>{document.querySelectorAll(".drawer-tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".drawer-section").forEach(x=>x.classList.remove("active"));t.classList.add("active");document.getElementById("d-"+t.dataset.tab).classList.add("active")});
-function openPerson(id){const p=state.people.find(x=>x.id===id);if(!p)return;openDrawer(p.name,`${p.role} · ${p.status}`,`<div class="kv"><span>Email</span><strong>${p.email}</strong></div><div class="kv"><span>Monthly pay</span><strong>${money(p.pay)}</strong></div><div class="kv"><span>Bank</span>${status(p.bankStatus)}</div><div class="kv"><span>Payroll</span>${status(p.included?"Included":"Not included")}</div><div class="drawer-inline-actions"><button class="btn secondary" onclick="startBankUpdate('${p.id}')">Update bank</button><button class="btn secondary" onclick="toggleInclude('${p.id}')">${p.included?"Remove from payroll":"Include in payroll"}</button></div>`,`<div class="mini-list"><div class="mini-item"><strong>July 2026 · ${money(p.pay)}</strong><small>Settled · 27 Jul 2026</small></div></div>`,`<div class="mini-list"><div class="mini-item"><strong>${p.bankStatus==="Verified"?"Bank verified":"Bank action required"}</strong><small>Current account state</small></div></div>`,"Preview employee portal",()=>{state.currentPerson=p.id;save();closeDrawer();goPage("employee")})}
+function openPerson(id){const p=state.people.find(x=>x.id===id);if(!p)return;openDrawer(p.name,`${p.role} · ${p.status}`,`<div class="kv"><span>Email</span><strong>${p.email}</strong></div><div class="kv"><span>Monthly pay</span><strong>${money(p.pay)}</strong></div><div class="kv"><span>Bank</span>${status(p.bankStatus)}</div><div class="kv"><span>Current payroll</span>${status(p.included?"Included":"Not included")}</div><div class="drawer-inline-actions"><button class="btn secondary" onclick="startBankUpdate('${p.id}')">Update salary account</button><button class="btn secondary" onclick="toggleInclude('${p.id}')">${p.included?"Remove from payroll":"Include in payroll"}</button></div>`,`<div class="mini-list"><div class="mini-item"><strong>July 2026 · ${money(p.pay)}</strong><small>Settled · 27 Jul 2026</small></div></div>`,`<div class="mini-list"><div class="mini-item"><strong>${p.bankStatus==="Verified"?"Bank verified":"Bank details need attention"}</strong><small>Salary account status</small></div></div>`,"Preview employee portal",()=>{state.currentPerson=p.id;save();closeDrawer();goPage("employee")})}
 function toggleInclude(id){const p=state.people.find(x=>x.id===id);p.included=!p.included;log(p.included?"Added to payroll":"Removed from payroll",`${p.id} · ${p.name}`,"Johannes Oghoro","Employee");save();closeDrawer();render();toast("Payroll updated",`${p.name} ${p.included?"included in":"removed from"} August payroll.`)}
-function openPayroll(id){const r=state.payrolls.find(x=>x.id===id);openDrawer(r.period,`${r.people} people · ${money(r.net)}`,`<div class="kv"><span>Pay date</span><strong>${r.date}</strong></div><div class="kv"><span>Funding</span>${status(r.funding)}</div><div class="kv"><span>Approval</span>${status(r.approval)}</div><div class="kv"><span>Status</span>${status(r.status)}</div>`,`<div class="mini-item"><strong>Payroll prepared</strong><small>Scheduler</small></div>`,`<div class="mini-item"><strong>${r.id}</strong><small>Immutable payroll reference</small></div>`,"Open payroll",()=>{closeDrawer();goPage(r.id==="PR-2026-08-001"?"payrollrun":"payroll")})}
-function openPayment(id){const p=state.payments.find(x=>x.id===id);openDrawer(p.id,`${p.type} · ${p.status}`,`<div class="kv"><span>Description</span><strong>${p.desc}</strong></div><div class="kv"><span>Amount</span><strong>${money(p.amount)}</strong></div><div class="kv"><span>Date</span><strong>${p.date}</strong></div><div class="kv"><span>Status</span>${status(p.status)}</div><div class="kv"><span>Provider</span><strong>Paystack</strong></div>`,`<div class="mini-item"><strong>Provider event</strong><small>${p.status}</small></div>`,`<div class="mini-item"><strong>Audit record</strong><small>${p.id}</small></div>`,"Close",closeDrawer)}
+function openPayroll(id){const r=state.payrolls.find(x=>x.id===id);openDrawer(r.period,`${r.people} people · ${money(r.net)}`,`<div class="kv"><span>Pay date</span><strong>${r.date}</strong></div><div class="kv"><span>Funding</span>${status(r.funding)}</div><div class="kv"><span>Approval</span>${status(r.approval)}</div><div class="kv"><span>Status</span>${status(r.status)}</div>`,`<div class="mini-item"><strong>Payroll prepared</strong><small>Scheduler</small></div>`,`<div class="mini-item"><strong>${r.id}</strong><small>Payroll reference</small></div>`,"Open payroll",()=>{closeDrawer();goPage(r.id==="PR-2026-08-001"?"payrollrun":"payroll")})}
+function openPayment(id){const p=state.payments.find(x=>x.id===id);openDrawer(p.id,`${p.type} · ${p.status}`,`<div class="kv"><span>Description</span><strong>${p.desc}</strong></div><div class="kv"><span>Amount</span><strong>${money(p.amount)}</strong></div><div class="kv"><span>Date</span><strong>${p.date}</strong></div><div class="kv"><span>Status</span>${status(p.status)}</div><div class="kv"><span>Payment service</span><strong>Paystack</strong></div>`,`<div class="mini-item"><strong>Payment update</strong><small>${p.status}</small></div>`,`<div class="mini-item"><strong>Audit record</strong><small>${p.id}</small></div>`,"Close",closeDrawer)}
 function previewPayslip(id){const s=state.payslips.find(x=>x.id===id);openDrawer(`${s.person} · ${s.period}`,"Payslip",`<div class="eyebrow">The24thGroup</div><h2 class="document-title">Payslip</h2><div class="kv"><span>Employee</span><strong>${s.person}</strong></div><div class="kv"><span>Net pay</span><strong>${money(s.amount)}</strong></div><div class="kv"><span>Period</span><strong>${s.period}</strong></div><div class="kv"><span>Status</span>${status(s.status)}</div>`,`<div class="mini-item"><strong>Generated</strong><small>${s.date}</small></div>`,`<div class="mini-item"><strong>${s.id}</strong><small>Document reference</small></div>`,"Download PDF",()=>toast("Payslip ready","Payslip export is not enabled yet."))}
 async function startBankUpdate(id){
   const p=state.people.find(x=>x.id===id);
@@ -60,7 +60,7 @@ document.getElementById("bankConfirm").onclick=async()=>{
       toast("Bank verification failed",error?.message||"Check the details and try again.");
     }finally{
       button.disabled=false;
-      button.textContent="Verify & save";
+      button.textContent="Verify account";
     }
     return;
   }
@@ -75,13 +75,13 @@ document.getElementById("bankConfirm").onclick=async()=>{
   toast("Bank account verified",`${p.name} is now ready for payroll.`);
 }
 window.preparePersonModal=function(){
-  document.getElementById("personModalTitle").textContent="Add person";
+  document.getElementById("personModalTitle").textContent="Add employee";
   document.getElementById("personInviteFields").hidden=false;
   document.getElementById("inviteResult").hidden=true;
   ["newName","newEmail","newRole","newPay"].forEach((id)=>{const el=document.getElementById(id);if(el)el.value=""});
   const button=document.getElementById("addPersonConfirm");
   button.disabled=false;
-  button.textContent="Add & invite";
+  button.textContent="Add employee";
   button.onclick=submitPersonInvitation;
 };
 
@@ -89,7 +89,7 @@ async function copyInviteLink(){
   const input=document.getElementById("inviteLink");
   try{
     await navigator.clipboard.writeText(input.value);
-    toast("Invite link copied","Open it in another browser or device to test employee acceptance.");
+    toast("Invite link copied","Share the secure link with the employee.");
   }catch{
     input.focus();
     input.select();
@@ -103,11 +103,11 @@ async function submitPersonInvitation(){
   const email=document.getElementById("newEmail").value.trim().toLowerCase();
   const role=document.getElementById("newRole").value.trim();
   const pay=parseInt(document.getElementById("newPay").value.replace(/\D/g,""),10);
-  if(!name||!email||!role||!pay){toast("Complete all fields","Name, email, role and monthly pay are required.");return}
+  if(!name||!email||!role||!pay){toast("Complete employee details","Full name, work email, job title and monthly salary are required.");return}
 
   const button=document.getElementById("addPersonConfirm");
   button.disabled=true;
-  button.textContent="Creating invite…";
+  button.textContent="Creating employee…";
 
   try{
     if(!window.IghoLive?.api){
@@ -142,7 +142,7 @@ async function submitPersonInvitation(){
     toast("Invitation created",`${name} can now join The24thGroup.`);
   }catch(error){
     button.disabled=false;
-    button.textContent="Add & invite";
+    button.textContent="Add employee";
     toast("Invitation failed",error?.message||"Could not create the employee invitation.");
   }
 }
