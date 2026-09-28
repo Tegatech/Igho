@@ -72,10 +72,7 @@ function routeParam(value: string | string[] | undefined): string | null {
   return null;
 }
 
-async function getPayrollDetailWithFunding(input: {
-  workspaceId: string;
-  payrollRunId: string;
-}) {
+async function getPayrollDetailWithFunding(input: { workspaceId: string; payrollRunId: string }) {
   const [payroll, funding] = await Promise.all([
     workspaceStore.getPayrollRunDetail(input),
     fundingStore.getLatest(input),
@@ -161,12 +158,7 @@ app.post("/api/v1/webhooks/paystack", async (req: RawBodyRequest, res) => {
     return;
   }
 
-  if (
-    !fundingProvider.verifyWebhookSignature(
-      req.rawBody,
-      req.header("x-paystack-signature"),
-    )
-  ) {
+  if (!fundingProvider.verifyWebhookSignature(req.rawBody, req.header("x-paystack-signature"))) {
     fail(res, id, 401, "FUNDING_002", "Invalid webhook signature");
     return;
   }
@@ -605,9 +597,7 @@ app.post(
 
     const body = req.body as { method?: unknown };
     const method =
-      body.method === "card" || body.method === "bank_transfer"
-        ? body.method
-        : undefined;
+      body.method === "card" || body.method === "bank_transfer" ? body.method : undefined;
     if (!method) {
       fail(res, id, 422, "FUNDING_003", "Funding method must be card or bank_transfer");
       return;
@@ -706,9 +696,7 @@ app.post(
       );
     } catch (error) {
       const message =
-        error instanceof PaystackProviderError
-          ? error.message
-          : "Could not start payroll funding";
+        error instanceof PaystackProviderError ? error.message : "Could not start payroll funding";
       await fundingStore.markFailed({
         providerReference,
         reason: message,
@@ -780,13 +768,7 @@ app.post(
           requestId: id,
         });
         if (!settled.valid) {
-          fail(
-            res,
-            id,
-            409,
-            "FUNDING_008",
-            "Funding verification did not match this payroll",
-          );
+          fail(res, id, 409, "FUNDING_008", "Funding verification did not match this payroll");
           return;
         }
       } else if (verification.status === "failed" || verification.status === "abandoned") {
@@ -804,9 +786,7 @@ app.post(
       ok(res, id, { payroll, funding: payroll?.funding ?? null });
     } catch (error) {
       const message =
-        error instanceof PaystackProviderError
-          ? error.message
-          : "Could not verify payroll funding";
+        error instanceof PaystackProviderError ? error.message : "Could not verify payroll funding";
       fail(res, id, 502, "FUNDING_009", message);
     }
   },
