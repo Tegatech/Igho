@@ -57,6 +57,16 @@ export const ighoApi = {
       method: "POST",
       body: JSON.stringify(adjustment),
     }),
+  startPayrollFunding: (runId, method) =>
+    apiRequest(`/payroll-runs/${runId}/funding`, {
+      method: "POST",
+      body: JSON.stringify({ method }),
+    }),
+  refreshPayrollFunding: (runId) =>
+    apiRequest(`/payroll-runs/${runId}/funding/refresh`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    }),
   myPay: () => apiRequest("/me/pay"),
   myProfile: () => apiRequest("/me/profile"),
   myBankAccount: () => apiRequest("/me/bank-account"),
