@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { requirePermission, type AccessContext, type RoleKey } from "@igho/core";
 import {
+  createNeonFundingStore,
   createNeonWorkspaceStore,
   createPaystackBankProvider,
   createPaystackFundingProvider,
@@ -13,6 +14,7 @@ import { fail, ok, requestId } from "./http.js";
 
 const env = readEnvironment();
 const workspaceStore = createNeonWorkspaceStore(env.databaseUrl);
+const fundingStore = createNeonFundingStore(env.databaseUrl);
 const bankProvider = env.paystackSecretKey
   ? createPaystackBankProvider(env.paystackSecretKey)
   : null;
@@ -68,6 +70,17 @@ function routeParam(value: string | string[] | undefined): string | null {
     return value[0].trim();
   }
   return null;
+}
+
+async function getPayrollDetailWithFunding(input: {
+  workspaceId: string;
+  payrollRunId: string;
+}) {
+  const [payroll, funding] = await Promise.all([
+    getPayrollDetailWithFunding(input),
+    fundingStore.getLatest(input),
+  ]);
+  return payroll ? { ...payroll, funding } : null;
 }
 
 async function authenticate(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -177,7 +190,7 @@ app.post("/api/v1/webhooks/paystack", async (req: RawBodyRequest, res) => {
   if (eventName === "charge.success") {
     const amountMinor = Number(event.data?.amount);
     const currency = typeof event.data?.currency === "string" ? event.data.currency : "";
-    const result = await workspaceStore.settlePayrollFunding({
+    const result = await fundingStore.settle({
       providerReference: reference,
       amountMinor,
       currency,
@@ -198,7 +211,7 @@ app.post("/api/v1/webhooks/paystack", async (req: RawBodyRequest, res) => {
   }
 
   if (eventName === "charge.failed") {
-    await workspaceStore.markPayrollFundingFailed({
+    await fundingStore.markFailed({
       providerReference: reference,
       reason:
         typeof event.data?.gateway_response === "string"
@@ -379,7 +392,7 @@ app.get(
       return;
     }
 
-    const payroll = await workspaceStore.getPayrollRunDetail({
+    const payroll = await getPayrollDetailWithFunding({
       workspaceId: access.workspaceId,
       payrollRunId: runId,
     });
@@ -451,7 +464,7 @@ app.patch(
       return;
     }
 
-    const payroll = await workspaceStore.getPayrollRunDetail({
+    const payroll = await getPayrollDetailWithFunding({
       workspaceId: access.workspaceId,
       payrollRunId: runId,
     });
@@ -547,7 +560,7 @@ app.post(
       return;
     }
 
-    const payroll = await workspaceStore.getPayrollRunDetail({
+    const payroll = await getPayrollDetailWithFunding({
       workspaceId: access.workspaceId,
       payrollRunId: runId,
     });
@@ -593,7 +606,7 @@ app.post(
       return;
     }
 
-    const payroll = await workspaceStore.getPayrollRunDetail({
+    const payroll = await getPayrollDetailWithFunding({
       workspaceId: access.workspaceId,
       payrollRunId: runId,
     });
@@ -633,7 +646,7 @@ app.post(
     }
 
     const providerReference = `IGHO-FND-${randomUUID()}`;
-    const intent = await workspaceStore.createPayrollFundingIntent({
+    const intent = await fundingStore.createFundingIntent({
       workspaceId: access.workspaceId,
       payrollRunId: runId,
       providerReference,
@@ -662,14 +675,14 @@ app.post(
         payrollRunId: runId,
       });
 
-      const funding = await workspaceStore.markPayrollFundingPending({
+      const funding = await fundingStore.markPending({
         workspaceId: access.workspaceId,
         providerReference,
         authorizationUrl: initialized.authorizationUrl,
         accessCode: initialized.accessCode,
       });
 
-      const updatedPayroll = await workspaceStore.getPayrollRunDetail({
+      const updatedPayroll = await getPayrollDetailWithFunding({
         workspaceId: access.workspaceId,
         payrollRunId: runId,
       });
@@ -687,7 +700,7 @@ app.post(
     } catch (error) {
       const message =
         error instanceof PaystackProviderError ? error.message : "Could not start payroll funding";
-      await workspaceStore.markPayrollFundingFailed({
+      await fundingStore.markFailed({
         providerReference,
         reason: message,
       });
@@ -726,7 +739,7 @@ app.post(
       return;
     }
 
-    const funding = await workspaceStore.getLatestPayrollFunding({
+    const funding = await fundingStore.getLatest({
       workspaceId: access.workspaceId,
       payrollRunId: runId,
     });
@@ -736,7 +749,7 @@ app.post(
     }
 
     if (funding.status === "settled") {
-      const payroll = await workspaceStore.getPayrollRunDetail({
+      const payroll = await getPayrollDetailWithFunding({
         workspaceId: access.workspaceId,
         payrollRunId: runId,
       });
@@ -747,7 +760,7 @@ app.post(
     try {
       const verification = await fundingProvider.verifyFunding(funding.providerReference);
       if (verification.status === "success") {
-        const settled = await workspaceStore.settlePayrollFunding({
+        const settled = await fundingStore.settle({
           providerReference: funding.providerReference,
           amountMinor: verification.amountMinor,
           currency: verification.currency,
@@ -762,14 +775,14 @@ app.post(
           return;
         }
       } else if (verification.status === "failed" || verification.status === "abandoned") {
-        await workspaceStore.markPayrollFundingFailed({
+        await fundingStore.markFailed({
           providerReference: funding.providerReference,
           reason: verification.gatewayResponse ?? `Paystack status: ${verification.status}`,
           providerPayload: verification.raw,
         });
       }
 
-      const payroll = await workspaceStore.getPayrollRunDetail({
+      const payroll = await getPayrollDetailWithFunding({
         workspaceId: access.workspaceId,
         payrollRunId: runId,
       });
