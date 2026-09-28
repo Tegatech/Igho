@@ -401,7 +401,11 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
         from public.payroll_runs
         where workspace_id = ${workspaceId}::uuid
           and status <> 'CANCELLED'
-        order by pay_date desc, created_at desc
+        order by
+          case when pay_date >= current_date then 0 else 1 end,
+          case when pay_date >= current_date then pay_date end asc,
+          case when pay_date < current_date then pay_date end desc,
+          created_at desc
         limit 1
       `) as PayrollRunRow[];
       const row = rows[0];
