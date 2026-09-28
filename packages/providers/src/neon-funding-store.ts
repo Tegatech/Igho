@@ -284,8 +284,15 @@ export function createNeonFundingStore(databaseUrl: string) {
       if (target.status === "settled") {
         return { found: true, valid: true, funding: mapFundingAttempt(target) };
       }
-      if (Number(target.amount) !== expectedAmount || target.currency !== input.currency) {
-        return { found: true, valid: false, funding: mapFundingAttempt(target) };
+      if (
+        Number(target.amount) !== expectedAmount ||
+        target.currency !== input.currency
+      ) {
+        return {
+          found: true,
+          valid: false,
+          funding: mapFundingAttempt(target),
+        };
       }
 
       const rows = (await sql`
