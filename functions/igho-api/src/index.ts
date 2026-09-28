@@ -213,6 +213,30 @@ app.get(
 );
 
 app.get(
+  "/api/v1/payroll-runs/current",
+  authenticate,
+  requireWorkspaceAccess,
+  async (req: AuthenticatedRequest, res) => {
+    const id = requestId(req);
+    const access = req.ighoAccess;
+    if (!access) {
+      fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
+      return;
+    }
+
+    try {
+      requirePermission(access, "payroll.view");
+    } catch {
+      fail(res, id, 403, "AUTH_004", "Permission denied");
+      return;
+    }
+
+    const payroll = await workspaceStore.getCurrentPayrollRun(access.workspaceId);
+    ok(res, id, { payroll });
+  },
+);
+
+app.get(
   "/api/v1/payroll-runs",
   authenticate,
   requireWorkspaceAccess,
@@ -414,30 +438,6 @@ app.post(
       payrollRunId: req.params.runId,
     });
     ok(res, id, { payroll }, 201);
-  },
-);
-
-app.get(
-  "/api/v1/payroll-runs/current",
-  authenticate,
-  requireWorkspaceAccess,
-  async (req: AuthenticatedRequest, res) => {
-    const id = requestId(req);
-    const access = req.ighoAccess;
-    if (!access) {
-      fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
-      return;
-    }
-
-    try {
-      requirePermission(access, "payroll.view");
-    } catch {
-      fail(res, id, 403, "AUTH_004", "Permission denied");
-      return;
-    }
-
-    const payroll = await workspaceStore.getCurrentPayrollRun(access.workspaceId);
-    ok(res, id, { payroll });
   },
 );
 
