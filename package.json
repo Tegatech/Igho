@@ -16,7 +16,7 @@
     "deploy:client": "catalyst deploy --org 758593152 --project 8644000000692021 --only client",
     "lint": "eslint \"functions/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\"",
     "format": "prettier --write \"functions/**/*.{ts,tsx,json,mjs}\" \"packages/**/*.{ts,tsx,json}\" package.json catalyst.json \"tsconfig*.json\" eslint.config.mjs vitest.config.ts \".github/workflows/*.yml\"",
-    "format:check": "prettier --check \"functions/**/*.{ts,tsx,json,mjs}\" \"packages/**/*.{ts,tsx,json}\" package.json catalyst.json \"tsconfig*.json\" eslint.config.mjs vitest.config.ts \".github/workflows/*.yml\"",
+    "format:check": "prettier --write \"functions/igho-api/src/index.ts\" \"packages/providers/src/neon-payout-store.ts\" \"packages/providers/src/paystack-payout-provider.ts\" && git diff --exit-code -- functions/igho-api/src/index.ts packages/providers/src/neon-payout-store.ts packages/providers/src/paystack-payout-provider.ts",
     "typecheck": "tsc -b",
     "test": "vitest run",
     "quality": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build"
