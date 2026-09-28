@@ -191,8 +191,7 @@ export function createNeonFundingStore(databaseUrl: string) {
       reason: string;
       providerPayload?: unknown;
     }) {
-      const payload =
-        input.providerPayload == null ? null : JSON.stringify(input.providerPayload);
+      const payload = input.providerPayload == null ? null : JSON.stringify(input.providerPayload);
       const rows = (await sql`
         with attempt as (
           update public.payroll_funding_attempts
@@ -249,8 +248,7 @@ export function createNeonFundingStore(databaseUrl: string) {
       requestId: string;
     }) {
       const expectedAmount = input.amountMinor / 100;
-      const payload =
-        input.providerPayload == null ? null : JSON.stringify(input.providerPayload);
+      const payload = input.providerPayload == null ? null : JSON.stringify(input.providerPayload);
 
       const targetRows = (await sql`
         select
@@ -284,10 +282,7 @@ export function createNeonFundingStore(databaseUrl: string) {
       if (target.status === "settled") {
         return { found: true, valid: true, funding: mapFundingAttempt(target) };
       }
-      if (
-        Number(target.amount) !== expectedAmount ||
-        target.currency !== input.currency
-      ) {
+      if (Number(target.amount) !== expectedAmount || target.currency !== input.currency) {
         return {
           found: true,
           valid: false,
