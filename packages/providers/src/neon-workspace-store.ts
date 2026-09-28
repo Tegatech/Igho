@@ -784,7 +784,13 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
             updated_at = now()
           from allowed a
           where pi.id = a.id
-          returning pi.id
+          returning
+            pi.id,
+            pi.included,
+            pi.readiness_status,
+            pi.base_pay,
+            pi.adjustment_total,
+            pi.net_pay
         ), summary as (
           select
             count(*)::int as employee_count,
@@ -793,9 +799,26 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
             coalesce(sum(base_pay) filter (where included),0) as total_base_pay,
             coalesce(sum(adjustment_total) filter (where included),0) as total_adjustments,
             coalesce(sum(net_pay) filter (where included),0) as total_net_pay
-          from public.payroll_items
-          where payroll_run_id = ${input.payrollRunId}::uuid
-            and workspace_id = ${input.workspaceId}::uuid
+          from (
+            select
+              pi.included,
+              pi.readiness_status,
+              pi.base_pay,
+              pi.adjustment_total,
+              pi.net_pay
+            from public.payroll_items pi
+            where pi.payroll_run_id = ${input.payrollRunId}::uuid
+              and pi.workspace_id = ${input.workspaceId}::uuid
+              and not exists (select 1 from item_update iu where iu.id = pi.id)
+            union all
+            select
+              iu.included,
+              iu.readiness_status,
+              iu.base_pay,
+              iu.adjustment_total,
+              iu.net_pay
+            from item_update iu
+          ) items
           having exists (select 1 from item_update)
         ), run_update as (
           update public.payroll_runs pr
@@ -871,22 +894,28 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
             ${input.workspaceId}::uuid,
             ${input.payrollRunId}::uuid,
             a.id,
-            ${input.type},
-            ${input.amount},
-            ${input.reason},
-            ${input.reference ?? null},
+            ${input.type}::text,
+            ${input.amount}::numeric,
+            ${input.reason}::text,
+            ${input.reference ?? null}::text,
             ${input.actorAuthUserId}::uuid
           from allowed a
           returning id, payroll_item_id
         ), item_update as (
           update public.payroll_items pi
           set
-            adjustment_total = pi.adjustment_total + ${input.amount},
-            net_pay = pi.net_pay + ${input.amount},
+            adjustment_total = pi.adjustment_total + ${input.amount}::numeric,
+            net_pay = pi.net_pay + ${input.amount}::numeric,
             updated_at = now()
           from adjustment a
           where pi.id = a.payroll_item_id
-          returning pi.id
+          returning
+            pi.id,
+            pi.included,
+            pi.readiness_status,
+            pi.base_pay,
+            pi.adjustment_total,
+            pi.net_pay
         ), summary as (
           select
             count(*)::int as employee_count,
@@ -895,9 +924,26 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
             coalesce(sum(base_pay) filter (where included),0) as total_base_pay,
             coalesce(sum(adjustment_total) filter (where included),0) as total_adjustments,
             coalesce(sum(net_pay) filter (where included),0) as total_net_pay
-          from public.payroll_items
-          where payroll_run_id = ${input.payrollRunId}::uuid
-            and workspace_id = ${input.workspaceId}::uuid
+          from (
+            select
+              pi.included,
+              pi.readiness_status,
+              pi.base_pay,
+              pi.adjustment_total,
+              pi.net_pay
+            from public.payroll_items pi
+            where pi.payroll_run_id = ${input.payrollRunId}::uuid
+              and pi.workspace_id = ${input.workspaceId}::uuid
+              and not exists (select 1 from item_update iu where iu.id = pi.id)
+            union all
+            select
+              iu.included,
+              iu.readiness_status,
+              iu.base_pay,
+              iu.adjustment_total,
+              iu.net_pay
+            from item_update iu
+          ) items
           having exists (select 1 from item_update)
         ), run_update as (
           update public.payroll_runs pr
@@ -929,8 +975,8 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
             jsonb_build_object(
               'payroll_run_id', ${input.payrollRunId}::text,
               'adjustment_id', a.id::text,
-              'type', ${input.type},
-              'amount', ${input.amount}
+              'type', ${input.type}::text,
+              'amount', ${input.amount}::numeric
             )
           from adjustment a
         )
