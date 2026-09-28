@@ -192,7 +192,10 @@ app.post("/api/v1/webhooks/paystack", async (req: RawBodyRequest, res) => {
       amountMinor,
       currency,
       channel: typeof event.data?.channel === "string" ? event.data.channel : null,
-      transactionId: event.data?.id == null ? null : String(event.data.id),
+      transactionId:
+        typeof event.data?.id === "string" || typeof event.data?.id === "number"
+          ? String(event.data.id)
+          : null,
       paidAt: typeof event.data?.paid_at === "string" ? event.data.paid_at : null,
       providerPayload: event,
       requestId: id,
