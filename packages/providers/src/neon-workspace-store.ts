@@ -453,6 +453,7 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
       const payDate = payrollDate(year, month, settings.pay_day);
       const preparationDate = subtractDays(payDate, settings.preparation_days);
       const cutoffDate = subtractDays(payDate, settings.cutoff_days);
+      const periodKey = `${String(year)}-${String(month).padStart(2, "0")}`;
 
       const existingRows = (await sql`
         select
@@ -571,7 +572,7 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
             r.id,
             'success',
             ${input.requestId},
-            jsonb_build_object('period', ${`${year}-${String(month).padStart(2, "0")}`}::text)
+            jsonb_build_object('period', ${periodKey}::text)
           from run r
         )
         select
