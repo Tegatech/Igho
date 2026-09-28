@@ -97,7 +97,7 @@
       <div class="metric"><div class="metric-label">Payroll total</div><div class="metric-value">${money(total)}</div><div class="metric-meta">${all} employees · monthly payroll</div></div>
       <div class="metric"><div class="metric-label">Ready to pay</div><div class="metric-value">${ready} / ${all}</div><div class="metric-meta">${issueList.length?issueList.length+' need attention':'All employees ready'}</div></div>
       <div class="metric"><div class="metric-label">Funding</div><div class="metric-value">${status(run.funding)}</div><div class="metric-meta">Money added before payments are released</div></div>
-      <div class="metric"><div class="metric-label">Pay date</div><div class="metric-value">1 Oct</div><div class="metric-meta">Never auto-shifted for weekends/holidays</div></div>`;
+      <div class="metric"><div class="metric-label">Pay date</div><div class="metric-value">${run.date}</div><div class="metric-meta">Never auto-shifted for weekends/holidays</div></div>`;
     const primary=document.getElementById('overviewPrimary');
     primary.disabled=false;
     if(issueList.length){primary.textContent=`Review ${issueList.length} issue`;primary.className='btn primary';primary.onclick=()=>goPage('people')}
