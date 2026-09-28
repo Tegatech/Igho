@@ -242,9 +242,7 @@ app.post("/api/v1/webhooks/paystack", async (req: RawBodyRequest, res) => {
     const result = await payoutStore.applyProviderResult({
       providerReference: reference,
       status: payoutStatus,
-      amountMinor: Number.isFinite(Number(event.data?.amount))
-        ? Number(event.data?.amount)
-        : null,
+      amountMinor: Number.isFinite(Number(event.data?.amount)) ? Number(event.data?.amount) : null,
       currency: typeof event.data?.currency === "string" ? event.data.currency : null,
       transferCode:
         typeof (event.data as { transfer_code?: unknown } | undefined)?.transfer_code === "string"
@@ -879,13 +877,7 @@ app.post(
         );
         return;
       }
-      fail(
-        res,
-        id,
-        409,
-        "PAYOUT_001",
-        "Only a funded payroll can be approved",
-      );
+      fail(res, id, 409, "PAYOUT_001", "Only a funded payroll can be approved");
       return;
     }
     const payroll = await getPayrollDetailWithFunding({
