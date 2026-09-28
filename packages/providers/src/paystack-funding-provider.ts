@@ -103,7 +103,7 @@ export function createPaystackFundingProvider(secretKey: string) {
       return {
         reference: data.reference ?? reference,
         status: data.status ?? "unknown",
-        amountMinor: Number(data.amount ?? 0),
+        amountMinor: data.amount ?? 0,
         currency: data.currency ?? "",
         channel: data.channel ?? null,
         transactionId: data.id == null ? null : String(data.id),
