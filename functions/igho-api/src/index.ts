@@ -213,6 +213,211 @@ app.get(
 );
 
 app.get(
+  "/api/v1/payroll-runs",
+  authenticate,
+  requireWorkspaceAccess,
+  async (req: AuthenticatedRequest, res) => {
+    const id = requestId(req);
+    const access = req.ighoAccess;
+    if (!access) {
+      fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
+      return;
+    }
+
+    try {
+      requirePermission(access, "payroll.view");
+    } catch {
+      fail(res, id, 403, "AUTH_004", "Permission denied");
+      return;
+    }
+
+    const items = await workspaceStore.listPayrollRuns(access.workspaceId);
+    ok(res, id, { items });
+  },
+);
+
+app.get(
+  "/api/v1/payroll-runs/:runId",
+  authenticate,
+  requireWorkspaceAccess,
+  async (req: AuthenticatedRequest, res) => {
+    const id = requestId(req);
+    const access = req.ighoAccess;
+    if (!access) {
+      fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
+      return;
+    }
+
+    try {
+      requirePermission(access, "payroll.view");
+    } catch {
+      fail(res, id, 403, "AUTH_004", "Permission denied");
+      return;
+    }
+
+    const payroll = await workspaceStore.getPayrollRunDetail({
+      workspaceId: access.workspaceId,
+      payrollRunId: req.params.runId,
+    });
+
+    if (!payroll) {
+      fail(res, id, 404, "PAYROLL_003", "Payroll run not found");
+      return;
+    }
+
+    ok(res, id, { payroll });
+  },
+);
+
+app.patch(
+  "/api/v1/payroll-runs/:runId/items/:itemId",
+  authenticate,
+  requireWorkspaceAccess,
+  async (req: AuthenticatedRequest, res) => {
+    const id = requestId(req);
+    const access = req.ighoAccess;
+    if (!access) {
+      fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
+      return;
+    }
+
+    try {
+      requirePermission(access, "payroll.edit");
+    } catch {
+      fail(res, id, 403, "AUTH_004", "Permission denied");
+      return;
+    }
+
+    const body = req.body as { included?: unknown };
+    if (typeof body.included !== "boolean") {
+      fail(res, id, 422, "PAYROLL_004", "included must be true or false");
+      return;
+    }
+
+    const result = await workspaceStore.setPayrollItemIncluded({
+      workspaceId: access.workspaceId,
+      payrollRunId: req.params.runId,
+      payrollItemId: req.params.itemId,
+      included: body.included,
+      actorAuthUserId: access.authUserId,
+      requestId: id,
+    });
+
+    if (!result.found) {
+      fail(res, id, 404, "PAYROLL_005", "Payroll item not found");
+      return;
+    }
+
+    if (!result.editable) {
+      fail(
+        res,
+        id,
+        409,
+        "PAYROLL_006",
+        "This payroll can no longer be changed",
+        "Payroll items are editable only before cutoff and before approval/payment processing.",
+      );
+      return;
+    }
+
+    const payroll = await workspaceStore.getPayrollRunDetail({
+      workspaceId: access.workspaceId,
+      payrollRunId: req.params.runId,
+    });
+    ok(res, id, { payroll });
+  },
+);
+
+app.post(
+  "/api/v1/payroll-runs/:runId/items/:itemId/adjustments",
+  authenticate,
+  requireWorkspaceAccess,
+  async (req: AuthenticatedRequest, res) => {
+    const id = requestId(req);
+    const access = req.ighoAccess;
+    if (!access) {
+      fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
+      return;
+    }
+
+    try {
+      requirePermission(access, "payroll.edit");
+    } catch {
+      fail(res, id, 403, "AUTH_004", "Permission denied");
+      return;
+    }
+
+    const body = req.body as {
+      type?: unknown;
+      amount?: unknown;
+      reason?: unknown;
+      reference?: unknown;
+    };
+    const type = typeof body.type === "string" ? body.type.trim() : "";
+    const amount = Number(body.amount);
+    const reason = typeof body.reason === "string" ? body.reason.trim() : "";
+    const reference =
+      typeof body.reference === "string" && body.reference.trim()
+        ? body.reference.trim()
+        : undefined;
+    const allowedTypes = new Set([
+      "bonus",
+      "reimbursement",
+      "allowance",
+      "deduction",
+      "salary_correction",
+      "other",
+    ]);
+
+    if (!allowedTypes.has(type) || !Number.isFinite(amount) || amount === 0 || !reason) {
+      fail(
+        res,
+        id,
+        422,
+        "PAYROLL_007",
+        "A valid adjustment type, non-zero amount and reason are required",
+      );
+      return;
+    }
+
+    const result = await workspaceStore.addPayrollAdjustment({
+      workspaceId: access.workspaceId,
+      payrollRunId: req.params.runId,
+      payrollItemId: req.params.itemId,
+      type,
+      amount,
+      reason,
+      ...(reference ? { reference } : {}),
+      actorAuthUserId: access.authUserId,
+      requestId: id,
+    });
+
+    if (!result.found) {
+      fail(res, id, 404, "PAYROLL_005", "Payroll item not found");
+      return;
+    }
+
+    if (!result.editable) {
+      fail(
+        res,
+        id,
+        409,
+        "PAYROLL_006",
+        "This payroll can no longer be changed",
+        "Adjustments are allowed only before cutoff, before approval/payment processing, and may not reduce net pay below zero.",
+      );
+      return;
+    }
+
+    const payroll = await workspaceStore.getPayrollRunDetail({
+      workspaceId: access.workspaceId,
+      payrollRunId: req.params.runId,
+    });
+    ok(res, id, { payroll }, 201);
+  },
+);
+
+app.get(
   "/api/v1/payroll-runs/current",
   authenticate,
   requireWorkspaceAccess,
