@@ -219,7 +219,13 @@
   settlePayroll=function(){const run=currentRun();run.status='Settled';state.payments.filter(p=>p.id.startsWith('TRF-2026-10')).forEach(p=>p.status='Settled');includedPeople().forEach((p,i)=>{p.lastPaid='1 Oct 2026';if(!state.payslips.some(s=>s.person===p.name&&s.period==='October 2026'))state.payslips.unshift({id:`PSL-2026-10-${String(i+1).padStart(3,'0')}`,person:p.name,employeeId:p.id,period:'October 2026',base:p.pay,amount:employeeNet(p),date:'1 Oct 2026',paymentRef:`TRF-2026-10-${String(i+1).padStart(3,'0')}`,status:'Available'})});log('Payroll settled',run.id,'Paystack','Payment');save();render();toast('Payroll complete','All transfers settled and payslips were generated.')};
   createPayroll=async function(){if(liveAdminMode()){try{let period;const latest=state.payrolls[0];if(latest?.payDateRaw){const d=new Date(latest.payDateRaw+'T00:00:00Z');d.setUTCMonth(d.getUTCMonth()+1);period=`${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`}const response=await window.IghoLive.api.preparePayroll(period);const payroll=response?.data?.payroll;if(payroll?.id){const detailResponse=await window.IghoLive.api.payrollRun(payroll.id);const runsResponse=await window.IghoLive.api.payrollRuns();window.hydratePayrollFromApi?.(runsResponse?.data?.items||[],detailResponse?.data?.payroll||null);goPage('payrollrun');toast('Payroll prepared',`${formatPeriod(payroll.periodYear,payroll.periodMonth)} payroll is ready for review.`)}}catch(error){toast('Payroll not prepared',error?.message||'Could not prepare payroll.')}return}toast('Payroll schedule','October payroll is the current prepared run. Future runs prepare 7 days before payday.')};
 
-  const oldGoPage=goPage;goPage=function(id){oldGoPage(id);if(id==='payrollrun')document.getElementById('breadcrumb').textContent='The24thGroup / October 2026 Payroll'};
+  const oldGoPage=goPage;goPage=function(id){
+    oldGoPage(id);
+    if(id==='payrollrun'){
+      const run=currentRun();
+      document.getElementById('breadcrumb').textContent=`The24thGroup / ${run?.period||'Payroll'}`;
+    }
+  };
   document.getElementById('resetBtn').onclick=()=>{if(confirm('Reset this workspace view to its starting state?')){state=makeV1State();save();render();goPage('overview');toast('Workspace reset','The payroll starting state has been restored.')}};
 
   function apiEmployeeToState(employee){
@@ -244,6 +250,11 @@
   window.hydratePeopleFromApi=function(items){
     if(!Array.isArray(items))return;
     state.people=items.map(apiEmployeeToState);
+    if(liveAdminMode()){
+      // Live mode must never leak seeded/demo payslips into the real workspace.
+      // Real payslips will be hydrated from the backend once M6 is available.
+      state.payslips=[];
+    }
     if(state.people.length&&!state.people.some(p=>p.id===state.currentPerson))state.currentPerson=state.people[0].id;
     save();
     render();
