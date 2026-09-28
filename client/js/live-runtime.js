@@ -110,6 +110,22 @@ async function hydrateLivePeople(me) {
       detail = detailResponse?.data?.payroll || null;
     }
     window.hydratePayrollFromApi?.(runs, detail);
+
+    const fundingReference = params.get("funding");
+    if (fundingReference && current?.id) {
+      try {
+        const fundingResponse = await ighoApi.refreshPayrollFunding(current.id);
+        window.hydratePayrollDetailFromApi?.(fundingResponse?.data?.payroll || null);
+      } finally {
+        params.delete("funding");
+        const nextQuery = params.toString();
+        window.history.replaceState(
+          {},
+          "",
+          `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}`,
+        );
+      }
+    }
     return;
   }
 
