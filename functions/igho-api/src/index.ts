@@ -182,11 +182,105 @@ app.get(
   "/api/v1/me/pay",
   authenticate,
   requireWorkspaceAccess,
-  (req: AuthenticatedRequest, res) => {
-    ok(res, requestId(req), {
-      scope: "self",
-      status: "not_available_until_payroll_milestone",
+  async (req: AuthenticatedRequest, res) => {
+    const id = requestId(req);
+    const access = req.ighoAccess;
+    if (!access) {
+      fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
+      return;
+    }
+
+    const pay = await workspaceStore.getEmployeeUpcomingPay({
+      workspaceId: access.workspaceId,
+      membershipId: access.membershipId,
     });
+
+    if (!pay) {
+      ok(res, id, {
+        scope: "self",
+        status: "no_upcoming_payroll",
+        payroll: null,
+      });
+      return;
+    }
+
+    ok(res, id, {
+      scope: "self",
+      status: "available",
+      payroll: pay,
+    });
+  },
+);
+
+app.get(
+  "/api/v1/payroll-runs/current",
+  authenticate,
+  requireWorkspaceAccess,
+  async (req: AuthenticatedRequest, res) => {
+    const id = requestId(req);
+    const access = req.ighoAccess;
+    if (!access) {
+      fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
+      return;
+    }
+
+    try {
+      requirePermission(access, "payroll.view");
+    } catch {
+      fail(res, id, 403, "AUTH_004", "Permission denied");
+      return;
+    }
+
+    const payroll = await workspaceStore.getCurrentPayrollRun(access.workspaceId);
+    ok(res, id, { payroll });
+  },
+);
+
+app.post(
+  "/api/v1/payroll-runs/prepare",
+  authenticate,
+  requireWorkspaceAccess,
+  async (req: AuthenticatedRequest, res) => {
+    const id = requestId(req);
+    const access = req.ighoAccess;
+    if (!access) {
+      fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
+      return;
+    }
+
+    try {
+      requirePermission(access, "payroll.create");
+    } catch {
+      fail(res, id, 403, "AUTH_004", "Permission denied");
+      return;
+    }
+
+    const body = req.body as { period?: unknown };
+    const period = typeof body.period === "string" && body.period.trim()
+      ? body.period.trim()
+      : undefined;
+
+    try {
+      const payroll = await workspaceStore.preparePayrollRun({
+        workspaceId: access.workspaceId,
+        actorAuthUserId: access.authUserId,
+        requestId: id,
+        ...(period ? { period } : {}),
+      });
+
+      if (!payroll) {
+        fail(res, id, 500, "PAYROLL_001", "Could not prepare payroll");
+        return;
+      }
+
+      ok(res, id, { payroll }, 201);
+    } catch (error) {
+      if (error instanceof Error && error.message === "INVALID_PAYROLL_PERIOD") {
+        fail(res, id, 422, "PAYROLL_002", "Payroll period must use YYYY-MM");
+        return;
+      }
+      throw error;
+    }
   },
 );
 
