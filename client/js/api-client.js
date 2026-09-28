@@ -39,11 +39,23 @@ export const ighoApi = {
   me: () => apiRequest("/me"),
   bootstrap: () => apiRequest("/bootstrap", { method: "POST" }),
   people: () => apiRequest("/people"),
+  payrollRuns: () => apiRequest("/payroll-runs"),
   currentPayroll: () => apiRequest("/payroll-runs/current"),
+  payrollRun: (runId) => apiRequest(`/payroll-runs/${runId}`),
   preparePayroll: (period) =>
     apiRequest("/payroll-runs/prepare", {
       method: "POST",
       body: JSON.stringify(period ? { period } : {}),
+    }),
+  setPayrollItemIncluded: (runId, itemId, included) =>
+    apiRequest(`/payroll-runs/${runId}/items/${itemId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ included }),
+    }),
+  addPayrollAdjustment: (runId, itemId, adjustment) =>
+    apiRequest(`/payroll-runs/${runId}/items/${itemId}/adjustments`, {
+      method: "POST",
+      body: JSON.stringify(adjustment),
     }),
   myPay: () => apiRequest("/me/pay"),
   myProfile: () => apiRequest("/me/profile"),
