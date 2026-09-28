@@ -95,8 +95,19 @@ async function hydrateLivePeople(me) {
 
   const roles = Array.isArray(me.roles) ? me.roles : [];
   if (roles.includes("OWNER") || roles.includes("PAYROLL_ADMIN")) {
-    const response = await ighoApi.people();
-    window.hydratePeopleFromApi?.(response?.data?.items || []);
+    const [peopleResponse, runsResponse] = await Promise.all([
+      ighoApi.people(),
+      ighoApi.payrollRuns(),
+    ]);
+    window.hydratePeopleFromApi?.(peopleResponse?.data?.items || []);
+
+    const runs = runsResponse?.data?.items || [];
+    let detail = null;
+    if (runs[0]?.id) {
+      const detailResponse = await ighoApi.payrollRun(runs[0].id);
+      detail = detailResponse?.data?.payroll || null;
+    }
+    window.hydratePayrollFromApi?.(runs, detail);
     return;
   }
 
