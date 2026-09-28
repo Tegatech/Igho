@@ -3,9 +3,11 @@ import express, { type NextFunction, type Request, type Response } from "express
 import { requirePermission, type AccessContext, type RoleKey } from "@igho/core";
 import {
   createNeonFundingStore,
+  createNeonPayoutStore,
   createNeonWorkspaceStore,
   createPaystackBankProvider,
   createPaystackFundingProvider,
+  createPaystackPayoutProvider,
   PaystackProviderError,
 } from "@igho/providers";
 import { createNeonJwtVerifier, type AuthenticatedIdentity } from "./auth/neon-jwt.js";
@@ -15,11 +17,15 @@ import { fail, ok, requestId } from "./http.js";
 const env = readEnvironment();
 const workspaceStore = createNeonWorkspaceStore(env.databaseUrl);
 const fundingStore = createNeonFundingStore(env.databaseUrl);
+const payoutStore = createNeonPayoutStore(env.databaseUrl);
 const bankProvider = env.paystackSecretKey
   ? createPaystackBankProvider(env.paystackSecretKey)
   : null;
 const fundingProvider = env.paystackSecretKey
   ? createPaystackFundingProvider(env.paystackSecretKey)
+  : null;
+const payoutProvider = env.paystackSecretKey
+  ? createPaystackPayoutProvider(env.paystackSecretKey)
   : null;
 const verifyBearer = createNeonJwtVerifier(env.neonAuthBaseUrl);
 const app = express();
@@ -73,11 +79,12 @@ function routeParam(value: string | string[] | undefined): string | null {
 }
 
 async function getPayrollDetailWithFunding(input: { workspaceId: string; payrollRunId: string }) {
-  const [payroll, funding] = await Promise.all([
+  const [payroll, funding, payouts] = await Promise.all([
     workspaceStore.getPayrollRunDetail(input),
     fundingStore.getLatest(input),
+    payoutStore.listPayouts(input),
   ]);
-  return payroll ? { ...payroll, funding } : null;
+  return payroll ? { ...payroll, funding, payouts } : null;
 }
 
 async function authenticate(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -219,6 +226,36 @@ app.post("/api/v1/webhooks/paystack", async (req: RawBodyRequest, res) => {
           : "Paystack reported a failed charge",
       providerPayload: event,
     });
+  }
+
+  if (
+    eventName === "transfer.success" ||
+    eventName === "transfer.failed" ||
+    eventName === "transfer.reversed"
+  ) {
+    const payoutStatus =
+      eventName === "transfer.success"
+        ? "success"
+        : eventName === "transfer.reversed"
+          ? "reversed"
+          : "failed";
+    const result = await payoutStore.applyProviderResult({
+      providerReference: reference,
+      status: payoutStatus,
+      amountMinor: Number.isFinite(Number(event.data?.amount)) ? Number(event.data?.amount) : null,
+      currency: typeof event.data?.currency === "string" ? event.data.currency : null,
+      transferCode:
+        typeof (event.data as { transfer_code?: unknown } | undefined)?.transfer_code === "string"
+          ? (event.data as { transfer_code: string }).transfer_code
+          : null,
+      failureReason:
+        payoutStatus === "failed" && typeof event.data?.gateway_response === "string"
+          ? event.data.gateway_response
+          : null,
+      providerPayload: event,
+    });
+    ok(res, id, { received: true, payout_updated: result.found && result.valid });
+    return;
   }
 
   ok(res, id, { received: true });
@@ -792,6 +829,209 @@ app.post(
         error instanceof PaystackProviderError ? error.message : "Could not verify payroll funding";
       fail(res, id, 502, "FUNDING_009", message);
     }
+  },
+);
+
+app.post(
+  "/api/v1/payroll-runs/:runId/approve",
+  authenticate,
+  requireWorkspaceAccess,
+  async (req: AuthenticatedRequest, res) => {
+    const id = requestId(req);
+    const access = req.ighoAccess;
+    if (!access) {
+      fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
+      return;
+    }
+    try {
+      requirePermission(access, "payroll.approve");
+    } catch {
+      fail(res, id, 403, "AUTH_004", "Permission denied");
+      return;
+    }
+    const runId = routeParam(req.params.runId);
+    if (!runId) {
+      fail(res, id, 422, "PAYROLL_008", "Payroll run id is required");
+      return;
+    }
+
+    const result = await payoutStore.approvePayroll({
+      workspaceId: access.workspaceId,
+      payrollRunId: runId,
+      actorAuthUserId: access.authUserId,
+      requestId: id,
+    });
+    if (!result.found) {
+      fail(res, id, 404, "PAYROLL_003", "Payroll run not found");
+      return;
+    }
+    if (!result.approved) {
+      if (result.blockerCount > 0) {
+        fail(
+          res,
+          id,
+          409,
+          "PAYOUT_002",
+          "Payroll has employees who are not ready for payment",
+          "Every included employee must have a verified salary account before approval.",
+        );
+        return;
+      }
+      fail(res, id, 409, "PAYOUT_001", "Only a funded payroll can be approved");
+      return;
+    }
+    const payroll = await getPayrollDetailWithFunding({
+      workspaceId: access.workspaceId,
+      payrollRunId: runId,
+    });
+    ok(res, id, { payroll }, 201);
+  },
+);
+
+app.post(
+  "/api/v1/payroll-runs/:runId/payouts",
+  authenticate,
+  requireWorkspaceAccess,
+  async (req: AuthenticatedRequest, res) => {
+    const id = requestId(req);
+    const access = req.ighoAccess;
+    if (!access) {
+      fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
+      return;
+    }
+    try {
+      requirePermission(access, "payments.execute");
+    } catch {
+      fail(res, id, 403, "AUTH_004", "Permission denied");
+      return;
+    }
+    if (!payoutProvider) {
+      fail(res, id, 503, "PAYOUT_003", "Payment provider is not configured");
+      return;
+    }
+    const runId = routeParam(req.params.runId);
+    if (!runId) {
+      fail(res, id, 422, "PAYROLL_008", "Payroll run id is required");
+      return;
+    }
+
+    const processing = await payoutStore.beginProcessing({
+      workspaceId: access.workspaceId,
+      payrollRunId: runId,
+      actorAuthUserId: access.authUserId,
+      requestId: id,
+    });
+    if (!processing.found) {
+      fail(res, id, 404, "PAYROLL_003", "Payroll run not found");
+      return;
+    }
+    if (!processing.processable) {
+      fail(res, id, 409, "PAYOUT_004", "Payroll must be approved before payment");
+      return;
+    }
+
+    for (const payout of processing.payouts) {
+      if (payout.status !== "queued") continue;
+      try {
+        const transfer = await payoutProvider.initiateTransfer({
+          amount: payout.amount,
+          currency: payout.currency,
+          recipientCode: payout.providerRecipientCode,
+          reference: payout.providerReference,
+          reason: `Salary payment · ${payout.employeeName}`,
+        });
+        await payoutStore.markInitiated({
+          providerReference: payout.providerReference,
+          transferCode: transfer.transferCode,
+          providerStatus: transfer.status,
+          providerPayload: transfer.raw,
+          actorAuthUserId: access.authUserId,
+        });
+      } catch (error) {
+        const message =
+          error instanceof PaystackProviderError ? error.message : "Could not initiate transfer";
+        await payoutStore.applyProviderResult({
+          providerReference: payout.providerReference,
+          status: "failed",
+          failureReason: message,
+        });
+      }
+    }
+
+    const payroll = await getPayrollDetailWithFunding({
+      workspaceId: access.workspaceId,
+      payrollRunId: runId,
+    });
+    ok(res, id, { payroll }, 201);
+  },
+);
+
+app.post(
+  "/api/v1/payroll-runs/:runId/payouts/refresh",
+  authenticate,
+  requireWorkspaceAccess,
+  async (req: AuthenticatedRequest, res) => {
+    const id = requestId(req);
+    const access = req.ighoAccess;
+    if (!access) {
+      fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
+      return;
+    }
+    try {
+      requirePermission(access, "payments.view");
+    } catch {
+      fail(res, id, 403, "AUTH_004", "Permission denied");
+      return;
+    }
+    if (!payoutProvider) {
+      fail(res, id, 503, "PAYOUT_003", "Payment provider is not configured");
+      return;
+    }
+    const runId = routeParam(req.params.runId);
+    if (!runId) {
+      fail(res, id, 422, "PAYROLL_008", "Payroll run id is required");
+      return;
+    }
+
+    const payouts = await payoutStore.listPayouts({
+      workspaceId: access.workspaceId,
+      payrollRunId: runId,
+    });
+    if (!payouts.length) {
+      fail(res, id, 404, "PAYOUT_005", "No payouts exist for this payroll");
+      return;
+    }
+
+    for (const payout of payouts) {
+      if (payout.status !== "pending") continue;
+      try {
+        const transfer = await payoutProvider.verifyTransfer(payout.providerReference);
+        const status =
+          transfer.status === "success"
+            ? "success"
+            : transfer.status === "failed"
+              ? "failed"
+              : transfer.status === "reversed"
+                ? "reversed"
+                : "pending";
+        await payoutStore.applyProviderResult({
+          providerReference: payout.providerReference,
+          status,
+          amountMinor: transfer.amountMinor || null,
+          currency: transfer.currency || null,
+          transferCode: transfer.transferCode,
+          providerPayload: transfer.raw,
+        });
+      } catch {
+        // Leave the payout pending; a later webhook or refresh can reconcile it.
+      }
+    }
+
+    const payroll = await getPayrollDetailWithFunding({
+      workspaceId: access.workspaceId,
+      payrollRunId: runId,
+    });
+    ok(res, id, { payroll });
   },
 );
 
