@@ -399,7 +399,7 @@ export function createNeonWorkspaceStore(databaseUrl: string) {
       let year: number;
       let month: number;
       if (input.period) {
-        const match = /^(\\d{4})-(\\d{2})$/.exec(input.period);
+        const match = /^(\d{4})-(\d{2})$/.exec(input.period);
         if (!match) throw new Error("INVALID_PAYROLL_PERIOD");
         year = Number(match[1]);
         month = Number(match[2]);
