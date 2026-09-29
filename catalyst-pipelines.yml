@@ -6,7 +6,7 @@ runners:
 
 images:
   DeployMachine:
-    image: ubuntu
+    image: node:22-bookworm
     auth:
       username: << env.USER_NAME >>
       password: << env.USER_PASSWORD >>
@@ -14,12 +14,6 @@ images:
 jobs:
   Quality_Check:
     steps:
-      - apt-get update
-      - apt-get install -y curl
-
-      - curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-      - apt-get install -y nodejs
-
       - node --version
       - npm --version
 
@@ -28,12 +22,6 @@ jobs:
 
   Deploy_Igho:
     steps:
-      - apt-get update
-      - apt-get install -y curl
-
-      - curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-      - apt-get install -y nodejs
-
       - node --version
       - npm --version
 
