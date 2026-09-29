@@ -272,15 +272,28 @@
     ensureM5Modal();
     document.getElementById('m5ConfirmTitle').textContent='Authorise salary payment';
     document.getElementById('m5ConfirmSubtitle').textContent=`Paystack requires an OTP before the payment to ${payout.employeeName} can proceed.`;
-    document.getElementById('m5ConfirmBody').innerHTML=`<div class="form-section"><div class="form-grid two-col"><div class="field"><span class="field-label">Employee</span><input value="${payout.employeeName}" readonly></div><div class="field"><span class="field-label">Amount</span><input value="${money(Number(payout.amount||0))}" readonly></div></div><div class="field"><label class="field-label" for="payoutOtpInput">Paystack transfer OTP</label><input id="payoutOtpInput" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Enter OTP"><small class="field-help">Use the OTP Paystack sent to the business contact for this transfer.</small></div><div class="form-note">The OTP expires for security. If it has expired, request a new one for this same salary transfer.</div><div class="actions-row"><button class="btn secondary" type="button" id="resendPayoutOtp">Resend OTP</button></div></div>`;
+    document.getElementById('m5ConfirmBody').innerHTML=`<div class="form-section"><div class="form-grid two-col"><div class="field"><span class="field-label">Employee</span><input value="${payout.employeeName}" readonly></div><div class="field"><span class="field-label">Amount</span><input value="${money(Number(payout.amount||0))}" readonly></div></div><div class="field"><label class="field-label" for="payoutOtpInput">Paystack transfer OTP</label><input id="payoutOtpInput" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Enter OTP" aria-describedby="payoutOtpHelp payoutOtpError"><div class="field-help-row"><small class="field-help" id="payoutOtpHelp">Use the OTP Paystack sent to the business contact for this transfer.</small><button class="btn ghost otp-resend" type="button" id="resendPayoutOtp">Resend OTP</button></div><small class="field-error" id="payoutOtpError" role="alert" hidden></small></div><div class="form-note">The OTP expires for security. Resending requests a new code for this same salary transfer and does not create another payment.</div></div>`;
+    const otpInput=document.getElementById('payoutOtpInput');
+    const otpError=document.getElementById('payoutOtpError');
+    const clearOtpError=()=>{
+      otpInput?.classList.remove('field-error-input');
+      if(otpError){otpError.hidden=true;otpError.textContent=''}
+    };
+    const showOtpError=(message)=>{
+      if(otpInput)otpInput.classList.add('field-error-input');
+      if(otpError){otpError.textContent=message;otpError.hidden=false}
+      otpInput?.focus();
+    };
+    otpInput?.addEventListener('input',clearOtpError);
     const resendButton=document.getElementById('resendPayoutOtp');
     resendButton.onclick=async()=>{
+      clearOtpError();
       resendButton.disabled=true;resendButton.textContent='Sending…';
       try{
         await window.IghoLive.api.resendPayrollPayoutOtp(run.id,payout.id);
-        document.getElementById('payoutOtpInput').value='';
-        document.getElementById('payoutOtpInput').focus();
-        toast('New OTP sent','Paystack sent a new OTP for this salary payment.');
+        if(otpInput)otpInput.value='';
+        otpInput?.focus();
+        toast('New OTP sent','Use the latest Paystack OTP to authorise this salary payment.');
       }catch(error){
         toast('OTP not resent',error?.message||'Could not request a new Paystack OTP.');
       }finally{
@@ -290,8 +303,9 @@
     const button=document.getElementById('m5ConfirmButton');
     button.textContent='Authorise payment';
     button.onclick=async()=>{
-      const otp=document.getElementById('payoutOtpInput')?.value?.trim()||'';
-      if(!/^\d{4,8}$/.test(otp)){toast('OTP required','Enter the Paystack transfer OTP.');return}
+      const otp=otpInput?.value?.trim()||'';
+      if(!/^\d{4,8}$/.test(otp)){showOtpError('Enter the 4–8 digit Paystack transfer OTP.');return}
+      clearOtpError();
       button.disabled=true;button.textContent='Authorising…';
       try{
         const response=await window.IghoLive.api.authorisePayrollPayout(run.id,payout.id,otp);
