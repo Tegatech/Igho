@@ -272,7 +272,21 @@
     ensureM5Modal();
     document.getElementById('m5ConfirmTitle').textContent='Authorise salary payment';
     document.getElementById('m5ConfirmSubtitle').textContent=`Paystack requires an OTP before the payment to ${payout.employeeName} can proceed.`;
-    document.getElementById('m5ConfirmBody').innerHTML=`<div class="kv"><span>Employee</span><strong>${payout.employeeName}</strong></div><div class="kv"><span>Amount</span><strong>${money(Number(payout.amount||0))}</strong></div><label class="field"><span>Paystack transfer OTP</span><input id="payoutOtpInput" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Enter OTP"><small>Use the OTP Paystack sent to the business contact for this transfer.</small></label>`;
+    document.getElementById('m5ConfirmBody').innerHTML=`<div class="form-section"><div class="form-grid two-col"><div class="field"><span class="field-label">Employee</span><input value="${payout.employeeName}" readonly></div><div class="field"><span class="field-label">Amount</span><input value="${money(Number(payout.amount||0))}" readonly></div></div><div class="field"><label class="field-label" for="payoutOtpInput">Paystack transfer OTP</label><input id="payoutOtpInput" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Enter OTP"><small class="field-help">Use the OTP Paystack sent to the business contact for this transfer.</small></div><div class="form-note">The OTP expires for security. If it has expired, request a new one for this same salary transfer.</div><div class="actions-row"><button class="btn secondary" type="button" id="resendPayoutOtp">Resend OTP</button></div></div>`;
+    const resendButton=document.getElementById('resendPayoutOtp');
+    resendButton.onclick=async()=>{
+      resendButton.disabled=true;resendButton.textContent='Sending…';
+      try{
+        await window.IghoLive.api.resendPayrollPayoutOtp(run.id,payout.id);
+        document.getElementById('payoutOtpInput').value='';
+        document.getElementById('payoutOtpInput').focus();
+        toast('New OTP sent','Paystack sent a new OTP for this salary payment.');
+      }catch(error){
+        toast('OTP not resent',error?.message||'Could not request a new Paystack OTP.');
+      }finally{
+        resendButton.disabled=false;resendButton.textContent='Resend OTP';
+      }
+    };
     const button=document.getElementById('m5ConfirmButton');
     button.textContent='Authorise payment';
     button.onclick=async()=>{
