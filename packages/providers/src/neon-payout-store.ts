@@ -1,6 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 
-export type PayoutStatus = "queued" | "pending" | "success" | "failed" | "reversed";
+export type PayoutStatus = "queued" | "otp" | "pending" | "success" | "failed" | "reversed";
 
 interface PayoutRow {
   id: string;
@@ -86,7 +86,7 @@ export function createNeonPayoutStore(databaseUrl: string) {
         select
           count(*)::int as total_count,
           count(*) filter (where status = 'success')::int as success_count,
-          count(*) filter (where status in ('queued','pending'))::int as open_count,
+          count(*) filter (where status in ('queued','otp','pending'))::int as open_count,
           count(*) filter (where status in ('failed','reversed'))::int as failed_count
         from public.payroll_payouts
         where payroll_run_id = ${payrollRunId}::uuid
@@ -294,11 +294,16 @@ export function createNeonPayoutStore(databaseUrl: string) {
       const status: PayoutStatus =
         providerStatus === "success"
           ? "success"
-          : providerStatus === "failed"
-            ? "failed"
-            : providerStatus === "reversed"
-              ? "reversed"
-              : "pending";
+          : providerStatus === "otp"
+            ? "otp"
+            : providerStatus === "failed" ||
+                providerStatus === "abandoned" ||
+                providerStatus === "blocked" ||
+                providerStatus === "rejected"
+              ? "failed"
+              : providerStatus === "reversed"
+                ? "reversed"
+                : "pending";
 
       const rows = (await sql`
         update public.payroll_payouts
@@ -313,7 +318,7 @@ export function createNeonPayoutStore(databaseUrl: string) {
           provider_payload = coalesce(${payload}::jsonb, provider_payload),
           updated_at = now()
         where provider_reference = ${input.providerReference}
-          and status in ('queued','pending')
+          and status in ('queued','otp','pending')
         returning payroll_run_id::text
       `) as { payroll_run_id: string }[];
 
@@ -368,6 +373,15 @@ export function createNeonPayoutStore(databaseUrl: string) {
       `;
       await recalculateRun(target.payroll_run_id);
       return { found: true, valid: true };
+    },
+
+    async getPayout(input: {
+      workspaceId: string;
+      payrollRunId: string;
+      payoutId: string;
+    }) {
+      const payouts = await list(input);
+      return payouts.find((payout) => payout.id === input.payoutId) ?? null;
     },
 
     async listPayouts(input: { workspaceId: string; payrollRunId: string }) {
