@@ -375,11 +375,7 @@ export function createNeonPayoutStore(databaseUrl: string) {
       return { found: true, valid: true };
     },
 
-    async getPayout(input: {
-      workspaceId: string;
-      payrollRunId: string;
-      payoutId: string;
-    }) {
+    async getPayout(input: { workspaceId: string; payrollRunId: string; payoutId: string }) {
       const payouts = await list(input);
       return payouts.find((payout) => payout.id === input.payoutId) ?? null;
     },
