@@ -83,6 +83,41 @@ export function createPaystackPayoutProvider(secretKey: string) {
       };
     },
 
+    async finalizeTransfer(input: {
+      transferCode: string;
+      otp: string;
+    }): Promise<PaystackTransfer> {
+      const data = await request<{
+        reference?: string;
+        transfer_code?: string;
+        status?: string;
+        recipient?: string | { recipient_code?: string };
+        amount?: number;
+        currency?: string;
+      }>("/transfer/finalize_transfer", {
+        method: "POST",
+        body: JSON.stringify({
+          transfer_code: input.transferCode,
+          otp: input.otp,
+        }),
+      });
+
+      const recipientCode =
+        typeof data.recipient === "string"
+          ? data.recipient
+          : (data.recipient?.recipient_code ?? null);
+
+      return {
+        reference: data.reference ?? "",
+        transferCode: data.transfer_code ?? input.transferCode,
+        status: data.status ?? "pending",
+        recipientCode,
+        amountMinor: data.amount ?? 0,
+        currency: data.currency ?? "",
+        raw: data,
+      };
+    },
+
     async verifyTransfer(reference: string): Promise<PaystackTransfer> {
       const data = await request<{
         reference?: string;
