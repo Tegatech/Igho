@@ -87,6 +87,11 @@ export const ighoApi = {
       method: "POST",
       body: JSON.stringify({ otp }),
     }),
+  resendPayrollPayoutOtp: (runId, payoutId) =>
+    apiRequest(`/payroll-runs/${runId}/payouts/${payoutId}/otp/resend`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    }),
   myPay: () => apiRequest("/me/pay"),
   myProfile: () => apiRequest("/me/profile"),
   myBankAccount: () => apiRequest("/me/bank-account"),
