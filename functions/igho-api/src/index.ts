@@ -967,6 +967,97 @@ app.post(
 );
 
 app.post(
+  "/api/v1/payroll-runs/:runId/payouts/:payoutId/otp",
+  authenticate,
+  requireWorkspaceAccess,
+  async (req: AuthenticatedRequest, res) => {
+    const id = requestId(req);
+    const access = req.ighoAccess;
+    if (!access) {
+      fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
+      return;
+    }
+    try {
+      requirePermission(access, "payments.execute");
+    } catch {
+      fail(res, id, 403, "AUTH_004", "Permission denied");
+      return;
+    }
+    if (!payoutProvider) {
+      fail(res, id, 503, "PAYOUT_003", "Payment provider is not configured");
+      return;
+    }
+
+    const runId = routeParam(req.params.runId);
+    const payoutId = routeParam(req.params.payoutId);
+    const body = req.body as { otp?: unknown };
+    const otp = typeof body.otp === "string" ? body.otp.trim() : "";
+    if (!runId || !payoutId) {
+      fail(res, id, 422, "PAYROLL_008", "Payroll run id and payout id are required");
+      return;
+    }
+    if (!/^\d{4,8}$/.test(otp)) {
+      fail(res, id, 422, "PAYOUT_006", "Enter the Paystack transfer OTP");
+      return;
+    }
+
+    const payout = await payoutStore.getPayout({
+      workspaceId: access.workspaceId,
+      payrollRunId: runId,
+      payoutId,
+    });
+    if (!payout) {
+      fail(res, id, 404, "PAYOUT_005", "Payout not found");
+      return;
+    }
+    if (payout.status !== "otp" || !payout.providerTransferCode) {
+      fail(res, id, 409, "PAYOUT_007", "This payment is not waiting for an OTP");
+      return;
+    }
+
+    try {
+      const transfer = await payoutProvider.finalizeTransfer({
+        transferCode: payout.providerTransferCode,
+        otp,
+      });
+      const providerStatus = transfer.status.toLowerCase();
+      const status =
+        providerStatus === "success"
+          ? "success"
+          : providerStatus === "otp"
+            ? "otp"
+            : providerStatus === "failed" ||
+                providerStatus === "abandoned" ||
+                providerStatus === "blocked" ||
+                providerStatus === "rejected"
+              ? "failed"
+              : providerStatus === "reversed"
+                ? "reversed"
+                : "pending";
+
+      await payoutStore.applyProviderResult({
+        providerReference: payout.providerReference,
+        status,
+        amountMinor: transfer.amountMinor || null,
+        currency: transfer.currency || null,
+        transferCode: transfer.transferCode,
+        providerPayload: transfer.raw,
+      });
+
+      const payroll = await getPayrollDetailWithFunding({
+        workspaceId: access.workspaceId,
+        payrollRunId: runId,
+      });
+      ok(res, id, { payroll });
+    } catch (error) {
+      const message =
+        error instanceof PaystackProviderError ? error.message : "Could not authorise payment";
+      fail(res, id, 422, "PAYOUT_008", message);
+    }
+  },
+);
+
+app.post(
   "/api/v1/payroll-runs/:runId/payouts/refresh",
   authenticate,
   requireWorkspaceAccess,
@@ -1003,17 +1094,23 @@ app.post(
     }
 
     for (const payout of payouts) {
-      if (payout.status !== "pending") continue;
+      if (payout.status !== "pending" && payout.status !== "otp") continue;
       try {
         const transfer = await payoutProvider.verifyTransfer(payout.providerReference);
+        const providerStatus = transfer.status.toLowerCase();
         const status =
-          transfer.status === "success"
+          providerStatus === "success"
             ? "success"
-            : transfer.status === "failed"
-              ? "failed"
-              : transfer.status === "reversed"
-                ? "reversed"
-                : "pending";
+            : providerStatus === "otp"
+              ? "otp"
+              : providerStatus === "failed" ||
+                  providerStatus === "abandoned" ||
+                  providerStatus === "blocked" ||
+                  providerStatus === "rejected"
+                ? "failed"
+                : providerStatus === "reversed"
+                  ? "reversed"
+                  : "pending";
         await payoutStore.applyProviderResult({
           providerReference: payout.providerReference,
           status,
