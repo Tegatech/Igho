@@ -83,6 +83,16 @@ export function createPaystackPayoutProvider(secretKey: string) {
       };
     },
 
+    async resendTransferOtp(transferCode: string): Promise<void> {
+      await request<unknown>("/transfer/resend_otp", {
+        method: "POST",
+        body: JSON.stringify({
+          transfer_code: transferCode,
+          reason: "resend_otp",
+        }),
+      });
+    },
+
     async finalizeTransfer(input: {
       transferCode: string;
       otp: string;
