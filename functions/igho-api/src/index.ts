@@ -967,6 +967,64 @@ app.post(
 );
 
 app.post(
+  "/api/v1/payroll-runs/:runId/payouts/:payoutId/otp/resend",
+  authenticate,
+  requireWorkspaceAccess,
+  async (req: AuthenticatedRequest, res) => {
+    const id = requestId(req);
+    const access = req.ighoAccess;
+    if (!access) {
+      fail(res, id, 403, "AUTH_002", "No active Igho workspace membership");
+      return;
+    }
+    try {
+      requirePermission(access, "payments.execute");
+    } catch {
+      fail(res, id, 403, "AUTH_004", "Permission denied");
+      return;
+    }
+    if (!payoutProvider) {
+      fail(res, id, 503, "PAYOUT_003", "Payment provider is not configured");
+      return;
+    }
+
+    const runId = routeParam(req.params.runId);
+    const payoutId = routeParam(req.params.payoutId);
+    if (!runId || !payoutId) {
+      fail(res, id, 422, "PAYROLL_008", "Payroll run id and payout id are required");
+      return;
+    }
+
+    const payout = await payoutStore.getPayout({
+      workspaceId: access.workspaceId,
+      payrollRunId: runId,
+      payoutId,
+    });
+    if (!payout) {
+      fail(res, id, 404, "PAYOUT_005", "Payout not found");
+      return;
+    }
+    if (payout.status !== "otp" || !payout.providerTransferCode) {
+      fail(res, id, 409, "PAYOUT_007", "This payment is not waiting for an OTP");
+      return;
+    }
+
+    try {
+      await payoutProvider.resendTransferOtp(payout.providerTransferCode);
+      ok(res, id, {
+        resent: true,
+        payout_id: payout.id,
+        message: "A new Paystack transfer OTP has been sent.",
+      });
+    } catch (error) {
+      const message =
+        error instanceof PaystackProviderError ? error.message : "Could not resend transfer OTP";
+      fail(res, id, 422, "PAYOUT_009", message);
+    }
+  },
+);
+
+app.post(
   "/api/v1/payroll-runs/:runId/payouts/:payoutId/otp",
   authenticate,
   requireWorkspaceAccess,
