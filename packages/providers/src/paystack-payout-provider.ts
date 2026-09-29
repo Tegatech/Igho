@@ -88,7 +88,7 @@ export function createPaystackPayoutProvider(secretKey: string) {
         method: "POST",
         body: JSON.stringify({
           transfer_code: transferCode,
-          reason: "resend_otp",
+          reason: "transfer",
         }),
       });
     },
