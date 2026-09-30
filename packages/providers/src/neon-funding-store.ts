@@ -251,8 +251,7 @@ export function createNeonFundingStore(databaseUrl: string) {
       const providerCurrency = String(input.currency ?? "")
         .trim()
         .toUpperCase();
-      const payload =
-        input.providerPayload == null ? null : JSON.stringify(input.providerPayload);
+      const payload = input.providerPayload == null ? null : JSON.stringify(input.providerPayload);
 
       const targetRows = (await sql`
         select
