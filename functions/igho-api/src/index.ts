@@ -810,7 +810,7 @@ app.post(
         if (!settled.valid) {
           const mismatch = settled.mismatch;
           const detail = mismatch
-            ? `Expected ${mismatch.expectedAmountMinor} ${mismatch.expectedCurrency}; Paystack verified ${mismatch.providerAmountMinor} ${mismatch.providerCurrency}.`
+            ? `Expected ${String(mismatch.expectedAmountMinor)} ${mismatch.expectedCurrency}; Paystack verified ${String(mismatch.providerAmountMinor)} ${mismatch.providerCurrency}.`
             : undefined;
           fail(
             res,
