@@ -808,7 +808,18 @@ app.post(
           requestId: id,
         });
         if (!settled.valid) {
-          fail(res, id, 409, "FUNDING_008", "Funding verification did not match this payroll");
+          const mismatch = settled.mismatch;
+          const detail = mismatch
+            ? `Expected ${mismatch.expectedAmountMinor} ${mismatch.expectedCurrency}; Paystack verified ${mismatch.providerAmountMinor} ${mismatch.providerCurrency}.`
+            : undefined;
+          fail(
+            res,
+            id,
+            409,
+            "FUNDING_008",
+            "Funding verification did not match this payroll",
+            detail,
+          );
           return;
         }
       } else if (verification.status === "failed" || verification.status === "abandoned") {
