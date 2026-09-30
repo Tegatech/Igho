@@ -247,10 +247,8 @@ export function createNeonFundingStore(databaseUrl: string) {
       providerPayload?: unknown;
       requestId: string;
     }) {
-      const providerAmountMinor = Math.round(Number(input.amountMinor));
-      const providerCurrency = String(input.currency ?? "")
-        .trim()
-        .toUpperCase();
+      const providerAmountMinor = Math.round(input.amountMinor);
+      const providerCurrency = input.currency.trim().toUpperCase();
       const payload = input.providerPayload == null ? null : JSON.stringify(input.providerPayload);
 
       const targetRows = (await sql`
@@ -286,9 +284,7 @@ export function createNeonFundingStore(databaseUrl: string) {
         return { found: true, valid: true, funding: mapFundingAttempt(target) };
       }
       const expectedAmountMinor = Math.round(Number(target.amount) * 100);
-      const expectedCurrency = String(target.currency ?? "")
-        .trim()
-        .toUpperCase();
+      const expectedCurrency = target.currency.trim().toUpperCase();
       if (
         !Number.isSafeInteger(providerAmountMinor) ||
         providerAmountMinor <= 0 ||
