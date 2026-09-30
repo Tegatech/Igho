@@ -247,7 +247,8 @@ export function createNeonFundingStore(databaseUrl: string) {
       providerPayload?: unknown;
       requestId: string;
     }) {
-      const expectedAmount = input.amountMinor / 100;
+      const providerAmountMinor = Math.round(input.amountMinor);
+      const providerCurrency = input.currency.trim().toUpperCase();
       const payload = input.providerPayload == null ? null : JSON.stringify(input.providerPayload);
 
       const targetRows = (await sql`
@@ -282,11 +283,24 @@ export function createNeonFundingStore(databaseUrl: string) {
       if (target.status === "settled") {
         return { found: true, valid: true, funding: mapFundingAttempt(target) };
       }
-      if (Number(target.amount) !== expectedAmount || target.currency !== input.currency) {
+      const expectedAmountMinor = Math.round(Number(target.amount) * 100);
+      const expectedCurrency = target.currency.trim().toUpperCase();
+      if (
+        !Number.isSafeInteger(providerAmountMinor) ||
+        providerAmountMinor <= 0 ||
+        expectedAmountMinor !== providerAmountMinor ||
+        expectedCurrency !== providerCurrency
+      ) {
         return {
           found: true,
           valid: false,
           funding: mapFundingAttempt(target),
+          mismatch: {
+            expectedAmountMinor,
+            providerAmountMinor,
+            expectedCurrency,
+            providerCurrency,
+          },
         };
       }
 

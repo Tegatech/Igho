@@ -93,7 +93,7 @@ export function createPaystackFundingProvider(secretKey: string) {
         id?: number | string;
         status?: string;
         reference?: string;
-        amount?: number;
+        amount?: number | string;
         currency?: string;
         channel?: string | null;
         paid_at?: string | null;
@@ -103,8 +103,8 @@ export function createPaystackFundingProvider(secretKey: string) {
       return {
         reference: data.reference ?? reference,
         status: data.status ?? "unknown",
-        amountMinor: data.amount ?? 0,
-        currency: data.currency ?? "",
+        amountMinor: Number(data.amount ?? 0),
+        currency: (data.currency ?? "").trim().toUpperCase(),
         channel: data.channel ?? null,
         transactionId: data.id == null ? null : String(data.id),
         paidAt: data.paid_at ?? null,
