@@ -701,6 +701,7 @@ app.post(
       const callbackUrl = new URL("/app/index.html", env.publicOrigin);
       callbackUrl.searchParams.set("live", "1");
       callbackUrl.searchParams.set("funding", providerReference);
+      callbackUrl.searchParams.set("payroll", runId);
 
       const initialized = await fundingProvider.initializeFunding({
         email: access.email,
