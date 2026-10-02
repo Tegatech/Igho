@@ -112,12 +112,30 @@ async function hydrateLivePeople(me) {
     window.hydratePayrollFromApi?.(runs, detail);
 
     const fundingReference = params.get("funding");
-    if (fundingReference && current?.id) {
+    if (fundingReference) {
       try {
-        const fundingResponse = await ighoApi.refreshPayrollFunding(current.id);
-        window.hydratePayrollDetailFromApi?.(fundingResponse?.data?.payroll || null);
+        let fundingRunId = params.get("payroll");
+
+        if (!fundingRunId) {
+          for (const run of runs) {
+            const detailResponse = await ighoApi.payrollRun(run.id);
+            const candidate = detailResponse?.data?.payroll || null;
+            if (candidate?.funding?.providerReference === fundingReference) {
+              fundingRunId = run.id;
+              break;
+            }
+          }
+        }
+
+        if (fundingRunId) {
+          const fundingResponse = await ighoApi.refreshPayrollFunding(fundingRunId);
+          window.hydratePayrollDetailFromApi?.(
+            fundingResponse?.data?.payroll || null,
+          );
+        }
       } finally {
         params.delete("funding");
+        params.delete("payroll");
         const nextQuery = params.toString();
         window.history.replaceState(
           {},
