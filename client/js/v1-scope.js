@@ -245,7 +245,8 @@
       else if(updated?.status==='READY')toast('Funding not completed','You can start another funding attempt.');
       else toast('Funding pending','Paystack has not confirmed the funds yet.');
     }catch(error){
-      toast('Could not check funding',error?.message||'Try again in a moment.');
+      const detail=error?.payload?.error?.detail;
+      toast('Could not check funding',detail||error?.message||'Try again in a moment.');
     }
   };
 
